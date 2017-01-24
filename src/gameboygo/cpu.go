@@ -1,4 +1,4 @@
-package cpu
+package gameboygo
 
 /*
 RES
@@ -10,10 +10,6 @@ http://goldencrystal.free.fr/GBZ80Opcodes.pdf
 https://www.youtube.com/watch?v=CImyDBJSTsQ
 https://cturt.github.io/cinoop.html
 */
-const(
-
-)
-var WRAM [8192]uint8;
 
 /*
 registos 
@@ -40,6 +36,17 @@ type registers struct{
 	sp uint16;
 	pc uint16;
 }
-func init() {
-	
+
+var regs registers
+
+func reset() {
+	regs.a = 0x01
+	regs.f = 0xB0
+	regs.b = 0x00
+	regs.c = 0x13
+	regs.d = 0x00
+	regs.e = 0xD8
+	regs.h = 0x01
+	regs.l = 0x4D
+	regs.sp = 0xFFFE
 }
