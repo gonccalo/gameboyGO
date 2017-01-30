@@ -12,15 +12,20 @@ var Io 			= ram[0xFF00:0xFF80]
 var Hram 		= ram[0xFF80:0xFFFF]
 var InterruptReg = &ram[0xFFFF]
 
-
-
-
-
 /*
-func (r *mem) read(addr uint16) uint8{
-
-}
-func (r * mem)write(addr uint16, word uint8) {
-	
-}
+Writing to this register launches a DMA transfer from ROM or RAM to OAM memory (sprite attribute table). The written value specifies the transfer source address divided by 100h, ie. source & destination are:
+  Source:      XX00-XX9F   ;XX in range from 00-F1h
+  Destination: FE00-FE9F
 */
+var Dma = &ram[0xFF46] 
+
+func writeByte(addr uint16, b uint8) bool{
+	if addr < 0x8000 {
+		return false
+	}
+	ram[addr] = b
+	return true
+}
+func readByte(addr uint16) uint8{
+	return ram[addr]
+}
