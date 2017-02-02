@@ -71,6 +71,8 @@ func Load_rom(filename string) {
 			return
 		}
 	}
+	//fmt.Printf("%v\n",Rom1)
+	//fmt.Printf("%T\n",ram)
 	return
 
 }
