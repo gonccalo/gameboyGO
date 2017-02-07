@@ -1,11 +1,5 @@
 package gameboygo
-type flag uint8
-const(
-	ZERO 		flag = 0x80
-	SUBTRACT 	flag = 0x40
-	HALFCARRY	flag = 0x20
-	CARRY		flag = 0X10
-)
+
 var ram [0x10000]uint8
 var Rom1 		= ram[0x0000:0x4000]
 var RomN 		= ram[0x4000:0x8000]
@@ -24,12 +18,7 @@ Writing to this register launches a DMA transfer from ROM or RAM to OAM memory (
   Destination: FE00-FE9F
 */
 var Dma = &ram[0xFF46] 
-func setFlags(f flag){
-	*InterruptReg |= uint8(f)
-}
-func clearFlags(f flag) {
-	*InterruptReg = *InterruptReg &^ uint8(f)
-}
+
 func writeByte(addr uint16, b uint8) bool{
 	if addr < 0x8000 {
 		return false
