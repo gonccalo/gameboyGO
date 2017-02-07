@@ -537,10 +537,10 @@ func scf(b uint8){
 }
 func jr_c_xx(b uint8){
 	fmt.Printf("JR c, $xx: %X\n", b)
-	var dest int16 = int16(readByte(regs.pc))
+	var dest int8 = int8(readByte(regs.pc))
 	regs.pc++
 	if regs.getFlag(CARRY) {
-		regs.pc += int16(dest)
+		regs.pc = uint16(int16(regs.pc) + int16(dest))
 	}
 	//8 cicles
 }
@@ -614,10 +614,10 @@ func ccf(b uint8){
 } 
 func jr_nc_xx(b uint8) {
 	fmt.Printf("JR nc, $xx: %X\n", b)
-	var dest int16 = int16(readByte(regs.pc))
+	var dest int8 = int8(readByte(regs.pc))
 	regs.pc++
 	if !regs.getFlag(CARRY) {
-		regs.pc += int16(dest)
+		regs.pc = uint16(int16(regs.pc) + int16(dest))
 	}
 	//8 cicles
 }
@@ -696,10 +696,10 @@ func add_hl_hl(b uint8) {
 }
 func jr_z_xx(b uint8) {
 	fmt.Printf("JR z, $xx: %X\n", b)
-	var dest int16 = int16(readByte(regs.pc))
+	var dest int8 = int8(readByte(regs.pc))
 	regs.pc++
 	if regs.getFlag(ZERO) {
-		regs.pc += int16(dest)
+		regs.pc = uint16(int16(regs.pc) + int16(dest))
 	}
 	//8 cicles
 }
@@ -766,10 +766,10 @@ func ld_hl_aabb(b uint8) {
 }
 func jr_nz_xx(b uint8) {
 	fmt.Printf("JR nz, $xx: %X\n", b)
-	var dest int16 = int16(readByte(regs.pc))
+	var dest int8 = int8(readByte(regs.pc))
 	regs.pc++
 	if !regs.getFlag(ZERO) {
-		regs.pc += int16(dest)
+		regs.pc = uint16(int16(regs.pc) + int16(dest))
 	}
 	//8 cicles
 }
@@ -847,14 +847,10 @@ func add_hl_de(b uint8) {
 	//8 cicles
 }
 func jr_xx(b uint8) {
-	var dest int16 = int16(readByte(regs.pc))
+	var dest int8 = int8(readByte(regs.pc))
 	regs.pc++
 	fmt.Printf("JR %X: %X\n",b,b)
-	if dest>0 {
-		regs.pc =regs.pc + uint16(dest)
-	} else{
-		regs.pc = regs.pc - uint16(-dest)
-	}
+	regs.pc = uint16(int16(regs.pc) + int16(dest))
 }
 func rla(b uint8) {
 	
