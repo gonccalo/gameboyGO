@@ -148,7 +148,7 @@ var ops = [0x100]operations{
  	ld_x_y,		//0x7B		
  	ld_x_y,		//0x7C		
  	ld_x_y,		//0x7D		
- 	ld_a_bhl,	//0x7E
+ 	ld_x_y,		//0x7E
  	ld_x_y,		//0x7F
 	add_a_x,	//0x80 
 	add_a_x,	//0x81 
@@ -452,21 +452,115 @@ func sbc_a_x(b uint8) {
 	
 }
 func sub_x(b uint8) {
-	
+	fmt.Printf("SUB x: %X\n", b)
+	regs.setFlags(SUBTRACT)
+
 }
 func adc_a_x(b uint8) {
+	fmt.Printf("ADC a, x: %X\n", b)
+	regs.clearFlags(SUBTRACT)
+	var result uint16 = 0
+	var tmp uint8
+	if regs.getFlag(CARRY){
+		result = 1
+	}
+	switch b{
+	case 0x88:
+		tmp = regs.b
+		result += uint16(regs.a) + uint16(regs.b)
+	case 0x89:
+		tmp = regs.c
+		result += uint16(regs.a) + uint16(regs.c)
+	case 0x8A:
+		tmp = regs.d
+		result += uint16(regs.a) + uint16(regs.d)
+	case 0x8B:
+		tmp = regs.e
+		result += uint16(regs.a) + uint16(regs.e)
+	case 0x8C:
+		tmp = regs.h
+		result += uint16(regs.a) + uint16(regs.h)
+	case 0x8D:
+		tmp = regs.l
+		result += uint16(regs.a) + uint16(regs.l)
+	case 0x8E:
+		tmp = readByte(regs.hl_read())
+		result += uint16(regs.a) + uint16(tmp)
+	case 0x8F:
+		tmp = regs.a
+		result += uint16(regs.a) + uint16(regs.a)
+	}
+	if (result & 0xFF00) > 0{
+		regs.setFlags(CARRY)
+	} else{
+		regs.clearFlags(CARRY)
+	}
+	if ((regs.a & 0x0F) + (tmp & 0x0F)) > 0x0F{
+		regs.setFlags(HALFCARRY)
+	} else{
+		regs.clearFlags(HALFCARRY)
+	}
+
+	regs.a = uint8(result & 0x00FF)
 	
+	if regs.a != 0{
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
 }
 func add_a_x(b uint8) {
-	
+	fmt.Printf("ADD a, x: %X\n", b)
+	regs.clearFlags(SUBTRACT)
+	var result uint32
+	var tmp uint8
+	switch b{
+	case 0x80:
+		tmp = regs.b
+		result = uint32(regs.a) + uint32(regs.b)
+	case 0x81:
+		tmp = regs.c
+		result = uint32(regs.a) + uint32(regs.c)
+	case 0x82:
+		tmp = regs.d
+		result = uint32(regs.a) + uint32(regs.d)
+	case 0x83:
+		tmp = regs.e
+		result = uint32(regs.a) + uint32(regs.e)
+	case 0x84:
+		tmp = regs.h
+		result = uint32(regs.a) + uint32(regs.h)
+	case 0x85:
+		tmp = regs.l
+		result = uint32(regs.a) + uint32(regs.l)
+	case 0x86:
+		tmp = readByte(regs.hl_read())
+		result = uint32(regs.a) + uint32(tmp)
+	case 0x87:
+		tmp = regs.a
+		result = uint32(regs.a + regs.a)
+	}
+	if ((regs.a & 0x0F) + (tmp & 0x0F)) > 0x0F{
+		regs.setFlags(HALFCARRY)
+	} else{
+		regs.clearFlags(HALFCARRY)
+	}
+	if (result & 0xFF00) > 0{
+		regs.setFlags(CARRY)
+	} else{
+		regs.clearFlags(CARRY)
+	}
+
+	regs.a = uint8(result & 0x00FF)
+
+	if regs.a != 0{
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
 }
 func halt(b uint8) {
 	
-}
-func ld_a_bhl(b uint8) {
-	fmt.Printf("LD a, (hl): %X\n", b)
-	regs.a = readByte(regs.hl_read())
-	//8 cicles
 }
 func ld_phl_a(b uint8) {
 	fmt.Printf("LD (hl), a: %X\n", b)
@@ -474,7 +568,192 @@ func ld_phl_a(b uint8) {
 	//cicles 8
 }
 func ld_x_y(b uint8) {
-	
+	switch b{
+	case 0x40:
+		regs.b = regs.b
+	case 0x41:
+		regs.b = regs.c
+		//4 cicles
+	case 0x42:
+		regs.b = regs.d
+		//4 cicles
+	case 0x43:
+		regs.b = regs.e
+		//4cicles
+	case 0x44:
+		regs.b = regs.h
+		//4 cicles
+	case 0x45:
+		regs.b = regs.l
+		//4 cicles
+	case 0x46:
+		regs.b = readByte(regs.hl_read())
+		//8 cicles
+	case 0x47:
+		regs.b = regs.a
+		//4 cicles
+	case 0x48:
+		regs.c = regs.b
+		//4 cicles
+	case 0x49:
+		regs.c = regs.c
+	case 0x4A:
+		regs.c = regs.d
+		//4 cicles
+	case 0x4B:
+		regs.c = regs.e
+		//4 cicles
+	case 0x4C:
+		regs.c = regs.h
+		//4 cicles
+	case 0x4D:
+		regs.c= regs.l
+		//4 cicles
+	case 0x4E:
+		regs.c = readByte(regs.hl_read())
+		//8 cicles
+	case 0x4F:
+		regs.c = regs.a
+		//4 cicles
+	case 0x50:
+		regs.d = regs.b
+		//4 cicles
+	case 0x51:
+		regs.d = regs.c
+		//4 cicles
+	case 0x52:
+		regs.d = regs.d
+		//4 cicles
+	case 0x53:
+		regs.d = regs.e
+		//4 cicles
+	case 0x54:
+		regs.d = regs.h
+		//4 cicles
+	case 0x55:
+		regs.d = regs.l
+		//4 cicles
+	case 0x56:
+		regs.d = readByte(regs.hl_read())
+		//8 cicles
+	case 0x57:
+		regs.d = regs.a
+		//4 cicles
+	case 0x58:
+		regs.e = regs.b
+		//4 cicles
+	case 0x59:
+		regs.e = regs.c
+		//4 cicles
+	case 0x5A:
+		regs.e = regs.d
+		//4 cicles
+	case 0x5B:
+		regs.e = regs.e
+		//4 cicles
+	case 0x5C:
+		regs.e = regs.h
+		//4 cicles
+	case 0x5D:
+		regs.e = regs.l
+		//4 cicles
+	case 0x5E:
+		regs.e = readByte(regs.hl_read())
+		//8 cicles
+	case 0x5F:
+		regs.e = regs.a
+		//4 cicles
+	case 0x60:
+		regs.h = regs.b
+		//4 cicles
+	case 0x61:
+		regs.h = regs.c
+		//4 cicles
+	case 0x62:
+		regs.h = regs.d
+		//4 cicles
+	case 0x63:
+		regs.h = regs.e
+		//4 cicles
+	case 0x64:
+		regs.h = regs.h
+		//4 cicles
+	case 0x65:
+		regs.h = regs.l
+		//4 cicles
+	case 0x66:
+		regs.h = readByte(regs.hl_read())
+		//8 cicles
+	case 0x67:
+		regs.h = regs.a
+		//4 cicles
+	case 0x68:
+		regs.l = regs.b
+		//4 cicles
+	case 0x69:
+		regs.l = regs.c
+		//4 cicles
+	case 0x6A:
+		regs.l = regs.d
+		//4 cicles
+	case 0x6B:
+		regs.l = regs.e
+		//4 cicles
+	case 0x6C:
+		regs.l = regs.h
+		//4 cicles
+	case 0x6D:
+		regs.l = regs.l
+		//4 cicles
+	case 0x6E:
+		regs.l = readByte(regs.hl_read())
+		//8 cicles
+	case 0x6F:
+		regs.l = regs.a
+		//4 cicles
+	case 0x70:
+		writeByte(regs.hl_read(), regs.b)
+		//8 cicles
+	case 0x71:
+		writeByte(regs.hl_read(), regs.c)
+		//8 cicles
+	case 0x72:
+		writeByte(regs.hl_read(), regs.d)
+		//8 cicles
+	case 0x73:
+		writeByte(regs.hl_read(), regs.e)
+		//8 cicles
+	case 0x74:
+		writeByte(regs.hl_read(), regs.h)
+		//8 cicles
+	case 0x75:
+		writeByte(regs.hl_read(), regs.l)
+		//8 cicles
+	case 0x78:
+		regs.a = regs.b
+		//4 cicles
+	case 0x79:
+		regs.a = regs.c
+		//4 cicles
+	case 0x7A:
+		regs.a = regs.d
+		//4 cicles
+	case 0x7B:
+		regs.a = regs.e
+		//4 cicles
+	case 0x7C:
+		regs.a = regs.h
+		//4 cicles
+	case 0x7D:
+		regs.a = regs.l
+		//4 cicles
+	case 0x7E:
+		regs.a = readByte(regs.hl_read())
+		//8 cicles
+	case 0x7F:
+		regs.a = regs.a
+		//4 cicles
+	}
 }
 func ld_sp_aabb(b uint8){
 	fmt.Printf("LD sp, $aabb: %X\n", b)
@@ -483,7 +762,10 @@ func ld_sp_aabb(b uint8){
 	//cicles 12
 }
 func ld_hld_a(b uint8){
-
+	fmt.Printf("LDD (hl), a: %X\n", b)
+	writeByte(regs.hl_read(), regs.a)
+	regs.hl_write(regs.hl_read()-1)
+	//8 cicles
 }
 func inc_sp(b uint8){
 	fmt.Printf("INC sp: %X\n", b)
@@ -530,7 +812,10 @@ func dec_bhl(b uint8){
 	//12 cicles
 }
 func ld_hl_xx(b uint8){
-
+	fmt.Printf("LD hl, $xx: %X\n", b)
+	writeByte(regs.hl_read(), readByte(regs.pc))
+	regs.pc++
+	//12 cicles
 }
 func scf(b uint8){
 
@@ -563,7 +848,10 @@ func add_hl_sp(b uint8){
 	//8 cicles
 }
 func ld_a_hld(b uint8){
-
+	fmt.Printf("LDD a, hl: %X\n", b)
+	regs.a = readByte(regs.hl_read())
+	regs.hl_write(regs.hl_read()-1)
+	//8 cicles
 }
 func dec_sp(b uint8){
 	fmt.Printf("DEC sp: %X\n", b)
@@ -607,7 +895,10 @@ func dec_a(b uint8){
 	//4 cicles
 }
 func ld_a_xx(b uint8){
-
+	fmt.Printf("LD a, $xx: %X\n", b)
+	regs.a = readByte(regs.pc)
+	regs.pc++
+	//8 cicles
 }
 func ccf(b uint8){
 
@@ -765,8 +1056,8 @@ func ld_hl_aabb(b uint8) {
 	//cicles 12
 }
 func jr_nz_xx(b uint8) {
-	fmt.Printf("JR nz, $xx: %X\n", b)
 	var dest int8 = int8(readByte(regs.pc))
+	fmt.Printf("JR nz, %d: %X\n",dest, b)
 	regs.pc++
 	if !regs.getFlag(ZERO) {
 		regs.pc = uint16(int16(regs.pc) + int16(dest))
