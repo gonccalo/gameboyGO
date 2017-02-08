@@ -437,19 +437,168 @@ func ret_nz(b uint8) {
 	
 }
 func cp_x(b uint8) {
-	
+	fmt.Printf("CP x: %X\n", b)
+	regs.setFlags(SUBTRACT)
+	var val uint8
+	switch b{
+	case 0xB8:
+		val = regs.b
+	case 0xB9:
+		val = regs.c
+	case 0xBA:
+		val = regs.d
+	case 0xBB:
+		val = regs.e
+	case 0xBC:
+		val = regs.h
+	case 0xBD:
+		val = regs.l
+	case 0xBE:
+		val = readByte(regs.hl_read())
+	case 0xBF:
+		val = regs.a 
+	}
+	if regs.a == val{
+		regs.setFlags(ZERO)
+	} else{
+		regs.clearFlags(ZERO)
+	}
+	if (val & 0x0F) > (regs.a & 0x0F) {
+		regs.setFlags(HALFCARRY)
+	} else{
+		regs.clearFlags(HALFCARRY)
+	}
+	if val > regs.a{
+		regs.setFlags(CARRY)
+	} else{
+		regs.clearFlags(CARRY)
+	}
 }
 func or_x(b uint8) {
-	
+	fmt.Printf("OR x: %X\n", b)
+	regs.clearFlags(SUBTRACT|HALFCARRY|CARRY)
+	switch b{
+	case 0xB0:
+		regs.a |= regs.b
+	case 0xB1:
+		regs.a |= regs.c
+	case 0xB2:
+		regs.a |= regs.d
+	case 0xB3:
+		regs.a |= regs.e
+	case 0xB4:
+		regs.a |= regs.h
+	case 0xB5:
+		regs.a |= regs.l
+	case 0xB6:
+		regs.a |= readByte(regs.hl_read())
+	case 0xB7:
+		regs.a |= regs.a
+	}
+	if regs.a != 0{
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
 }
 func xor_x(b uint8) {
-	
+	fmt.Printf("XOR x: %X\n", b)
+	regs.clearFlags(SUBTRACT|HALFCARRY|CARRY)
+	switch b{
+	case 0xA8:
+		regs.a ^= regs.b
+	case 0xA9:
+		regs.a ^= regs.c
+	case 0xAA:
+		regs.a ^= regs.d
+	case 0xAB:
+		regs.a ^= regs.e
+	case 0xAC:
+		regs.a ^= regs.h
+	case 0xAD:
+		regs.a ^= regs.l
+	case 0xAE:
+		regs.a ^= readByte(regs.hl_read())
+	case 0xAF:
+		regs.a ^= regs.a
+	}
+	if regs.a != 0{
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
 }
 func and_x(b uint8) {
-	
+	fmt.Printf("AND x: %X\n", b)
+	regs.clearFlags(SUBTRACT|CARRY)
+	regs.setFlags(HALFCARRY)
+	switch b{
+	case 0xA0:
+		regs.a &= regs.b
+	case 0xA1:
+		regs.a &= regs.c
+	case 0xA2:
+		regs.a &= regs.d
+	case 0xA3:
+		regs.a &= regs.e
+	case 0xA4:
+		regs.a &= regs.h
+	case 0xA5:
+		regs.a &= regs.l
+	case 0xA6:
+		regs.a &= readByte(regs.hl_read())
+	case 0xA7:
+		regs.a &= regs.a
+	}
+	if regs.a != 0{
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
 }
 func sbc_a_x(b uint8) {
-	
+	fmt.Printf("SBC a, x: %X\n", b)
+	regs.setFlags(SUBTRACT)
+	var val uint8
+	if regs.getFlag(CARRY){
+		val = 1
+	}
+	switch b{
+	case 0x98:
+		val += regs.b
+	case 0x99:
+		val += regs.c
+	case 0x9A:
+		val += regs.d
+	case 0x9B:
+		val += regs.e
+	case 0x9C:
+		val += regs.h
+	case 0x9D:
+		val += regs.l
+	case 0x9E:
+		val += readByte(regs.hl_read())
+	case 0x9F:
+		val += regs.a 
+	}
+	if val > regs.a {
+		regs.setFlags(CARRY)
+	} else {
+		regs.clearFlags(CARRY)
+	}
+	if (val & 0x0F) > (regs.a & 0x0F) {
+		regs.setFlags(HALFCARRY)
+	} else{
+		regs.clearFlags(HALFCARRY)
+	}
+
+	regs.a -= val
+
+	if regs.a != 0 {
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
 }
 func sub_x(b uint8) {
 	fmt.Printf("SUB x: %X\n", b)
