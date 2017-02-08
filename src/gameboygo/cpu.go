@@ -302,7 +302,10 @@ func or_xx(b uint8) {
 	
 }
 func push_af(b uint8) {
-	
+	fmt.Printf("PUSH af: %X\n", b)
+	write16bits(regs.sp, regs.af_read())
+	regs.sp -= 2
+	//16 cicles
 }
 func di(b uint8) {
 	
@@ -311,7 +314,10 @@ func ld_a_c(b uint8) {
 	
 }
 func pop_af(b uint8) {
-	
+	fmt.Printf("POP af: %X\n", b)
+	regs.af_write(read16bits(regs.sp))
+	regs.sp += 2
+	//12 cicles
 }
 func ldh_a_xx(b uint8) {
 	
@@ -338,13 +344,19 @@ func and_xx(b uint8) {
 	
 }
 func push_hl(b uint8) {
-	
+	fmt.Printf("PUSH hl: %X\n", b)
+	write16bits(regs.sp, regs.hl_read())
+	regs.sp -= 2
+	//16 cicles
 }
 func ld_c_a(b uint8) {
 	
 }
 func pop_hl(b uint8) {
-	
+	fmt.Printf("POP hl: %X\n", b)
+	regs.hl_write(read16bits(regs.sp))
+	regs.sp += 2
+	//12 cicles
 }
 func ld_xx_a(b uint8) {
 	
@@ -356,10 +368,23 @@ func sbc_a_xx(b uint8) {
 	
 }
 func call_c_aabb(b uint8) {
-	
+	var dest uint16 = read16bits(regs.pc)
+	regs.pc += 2
+	fmt.Printf("CALL c, %X: %X\n", dest, b)
+	if regs.getFlag(CARRY){
+		write16bits(regs.sp, regs.pc)
+		regs.sp -= 2
+		regs.pc = dest
+	}
 }
 func jp_c_aabb(b uint8) {
-	
+	var dest uint16 = read16bits(regs.pc)
+	fmt.Printf("JP c, %X: %X\n", dest, b)
+	regs.pc += 2
+	if regs.getFlag(CARRY){
+		regs.pc = dest
+	}
+	//12 cicles
 }
 func reti(b uint8) {
 	
@@ -374,16 +399,35 @@ func sub_xx(b uint8) {
 	
 }
 func push_de(b uint8) {
-	
+	fmt.Printf("PUSH de: %X\n", b)
+	write16bits(regs.sp, regs.de_read())
+	regs.sp -= 2
+	//16 cicles
 }
 func call_nc_aabb(b uint8) {
-	
+	var dest uint16 = read16bits(regs.pc)
+	regs.pc += 2
+	fmt.Printf("CALL nc, %X: %X\n", dest, b)
+	if !regs.getFlag(CARRY){
+		write16bits(regs.sp, regs.pc)
+		regs.sp -= 2
+		regs.pc = dest
+	}
 }
 func jp_nc_aabb(b uint8) {
-	
+	var dest uint16 = read16bits(regs.pc)
+	fmt.Printf("JP nc, %X: %X\n", dest, b)
+	regs.pc += 2
+	if !regs.getFlag(CARRY){
+		regs.pc = dest
+	}
+	//12 cicles
 }
 func pop_de(b uint8) {
-	
+	fmt.Printf("POP de: %X\n", b)
+	regs.de_write(read16bits(regs.sp))
+	regs.sp += 2
+	//12 cicles
 }
 func ret_nc(b uint8) {
 	
@@ -398,13 +442,26 @@ func call_aabb(b uint8) {
 	
 }
 func call_z_aabb(b uint8) {
-	
+	var dest uint16 = read16bits(regs.pc)
+	regs.pc += 2
+	fmt.Printf("CALL z, %X: %X\n", dest, b)
+	if regs.getFlag(ZERO){
+		write16bits(regs.sp, regs.pc)
+		regs.sp -= 2
+		regs.pc = dest
+	}
 }
 func many_ops(b uint8) {
 	
 }
 func jp_z_aabb(b uint8) {
-	
+	var dest uint16 = read16bits(regs.pc)
+	fmt.Printf("JP z, %X: %X\n",dest, b)
+	regs.pc += 2
+	if regs.getFlag(ZERO){
+		regs.pc = dest
+	}
+	//12 cicles
 }
 func ret(b uint8) {
 	
@@ -419,19 +476,40 @@ func add_a_xx(b uint8) {
 	
 }
 func push_bc(b uint8) {
-	
+	fmt.Printf("PUSH bc: %X\n", b)
+	write16bits(regs.sp, regs.bc_read())
+	regs.sp -= 2
+	//16 cicles
 }
 func call_nz_aabb(b uint8) {
-	
+	var dest uint16 = read16bits(regs.pc)
+	regs.pc += 2
+	fmt.Printf("CALL nz, %X: %X\n", dest, b)
+	if !regs.getFlag(ZERO){
+		write16bits(regs.sp, regs.pc)
+		regs.sp -= 2
+		regs.pc = dest
+	}
 }
 func jp_aabb(b uint8) {
-	
+	var dest uint16 = read16bits(regs.pc)
+	fmt.Printf("JP %X: %X\n", dest, b)
+	regs.pc = dest
 }
 func jp_nz_aabb(b uint8) {
-	
+	var dest uint16 = read16bits(regs.pc)
+	fmt.Printf("JP nz, %X: %X\n",dest, b)
+	regs.pc += 2
+	if !regs.getFlag(ZERO){
+		regs.pc = dest
+	}
+	//12 cicles
 }
 func pop_bc(b uint8) {
-	
+	fmt.Printf("POP bc: %X\n", b)
+	regs.bc_write(read16bits(regs.sp))
+	regs.sp += 2
+	//12 cicles
 }
 func ret_nz(b uint8) {
 	
@@ -1596,6 +1674,13 @@ type registers struct{
 	
 	sp uint16;
 	pc uint16;
+}
+func (r *registers)af_write(data uint16) {
+	r.a = uint8((data & 0xFF00) >> 8)
+	r.f = uint8(data & 0x00FF)
+}
+func (r *registers)af_read() uint16{
+	return uint16((uint16(r.a) << 8) | uint16(r.f)) 
 }
 func (r *registers)bc_write(data uint16) {
 	r.b = uint8((data & 0xFF00) >> 8)
