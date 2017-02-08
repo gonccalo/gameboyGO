@@ -454,7 +454,43 @@ func sbc_a_x(b uint8) {
 func sub_x(b uint8) {
 	fmt.Printf("SUB x: %X\n", b)
 	regs.setFlags(SUBTRACT)
+	var val uint8
+	switch b{
+	case 0x90:
+		val = regs.b
+	case 0x91:
+		val = regs.c
+	case 0x92:
+		val = regs.d
+	case 0x93:
+		val = regs.e
+	case 0x94:
+		val = regs.h
+	case 0x95:
+		val = regs.l
+	case 0x96:
+		val = readByte(regs.hl_read())
+	case 0x97:
+		val = regs.a 
+	}
+	if val > regs.a {
+		regs.setFlags(CARRY)
+	} else {
+		regs.clearFlags(CARRY)
+	}
+	if (val & 0x0F) > (regs.a & 0x0F) {
+		regs.setFlags(HALFCARRY)
+	} else{
+		regs.clearFlags(HALFCARRY)
+	}
 
+	regs.a -= val
+
+	if regs.a != 0 {
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
 }
 func adc_a_x(b uint8) {
 	fmt.Printf("ADC a, x: %X\n", b)
