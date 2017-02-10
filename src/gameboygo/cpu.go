@@ -14,13 +14,6 @@ https://www.youtube.com/watch?v=CImyDBJSTsQ
 https://cturt.github.io/cinoop.html
 */
 type operations func(uint8)
-type flag uint8
-const(
-	ZERO 		flag = 0x80
-	SUBTRACT 	flag = 0x40
-	HALFCARRY	flag = 0x20
-	CARRY		flag = 0X10
-)
 var ops = [0x100]operations{
 	nop,  		//0x00
 	ld_bc_aabb,	//0x01
@@ -349,7 +342,17 @@ func rst_30(b uint8) {
 	//32 cicles
 }
 func or_xx(b uint8) {
-	
+	regs.clearFlags(SUBTRACT|HALFCARRY|CARRY)
+	var val uint8 = readByte(regs.pc)
+	regs.pc++
+	fmt.Printf("OR %X: %X\n", val, b)
+	regs.a |= val
+	if regs.a != 0{
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
+	//8 cicles
 }
 func push_af(b uint8) {
 	fmt.Printf("PUSH af: %X\n", b)
@@ -361,7 +364,9 @@ func di(b uint8) {
 	
 }
 func ld_a_c(b uint8) {
-	
+	fmt.Printf("LD a, (c): %X\n", b)
+	regs.a = readByte(0xFF00 + uint16(regs.c))
+	//8 cicles
 }
 func pop_af(b uint8) {
 	fmt.Printf("POP af: %X\n", b)
@@ -370,7 +375,11 @@ func pop_af(b uint8) {
 	//12 cicles
 }
 func ldh_a_xx(b uint8) {
-	
+	var val uint8 = readByte(regs.pc)
+	regs.pc++
+	fmt.Printf("LDH a, %X: %X\n", val, b)
+	regs.a = readByte(0xFF00 + uint16(val))
+	//12 cicles
 }
 func rst_28(b uint8) {
 	fmt.Printf("RST 28: %X\n", b)
@@ -380,16 +389,48 @@ func rst_28(b uint8) {
 	//32 cicles
 }
 func xor_xx(b uint8) {
-	
+	regs.clearFlags(SUBTRACT|HALFCARRY|CARRY)
+	var val uint8 = readByte(regs.pc)
+	regs.pc++
+	fmt.Printf("XOR %X: %X\n", val, b)
+	regs.a ^= val
+	if regs.a != 0{
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
+	//8 cicles
 }
 func ld_aabb_a(b uint8) {
-	
+	var dest uint16 = read16bits(regs.pc)
+	regs.pc += 2
+	fmt.Printf("LD %X, a: %X\n", dest, b)
+	writeByte(dest, regs.a)
+	//16 cicles
 }
 func jp_hl(b uint8) {
-	
+	fmt.Printf("JP hl: %X\n", b)
+	regs.pc = regs.hl_read()
+	//4 cicles
 }
 func add_sp_xx(b uint8) {
-	
+	var val int8 = int8(readByte(regs.pc))
+	regs.pc++
+	fmt.Printf("ADD sp, %X: %X\n", val, b)
+	regs.clearFlags(ZERO|SUBTRACT)
+	var result uint32 = uint32(int16(regs.sp) + int16(val))
+	if (result & 0xFF0000) > 0{
+		regs.setFlags(CARRY)
+	} else{
+		regs.clearFlags(CARRY)
+	}
+	if ((regs.sp & 0x0F) + (uint16(val) & 0x0F)) > 0x0F{
+		regs.setFlags(HALFCARRY)
+	} else{
+		regs.clearFlags(HALFCARRY)
+	}
+	regs.sp = uint16(result & 0x0000FFFF)
+	//16 cicles
 }
 func rst_20(b uint8) {
 	fmt.Printf("RST 20: %X\n", b)
@@ -399,7 +440,18 @@ func rst_20(b uint8) {
 	//32 cicles
 }
 func and_xx(b uint8) {
-	
+	var val uint8 = readByte(regs.pc)
+	regs.pc++
+	fmt.Printf("AND %X: %X\n", val, b)
+	regs.clearFlags(SUBTRACT|CARRY)
+	regs.setFlags(HALFCARRY)
+	regs.a &= val
+	if regs.a != 0{
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
+	//8 cicles
 }
 func push_hl(b uint8) {
 	fmt.Printf("PUSH hl: %X\n", b)
@@ -408,7 +460,9 @@ func push_hl(b uint8) {
 	//16 cicles
 }
 func ld_c_a(b uint8) {
-	
+	fmt.Printf("LD (c), a: %X\n", b)
+	writeByte(0xFF00+uint16(regs.c), regs.a)
+	//8 cicles
 }
 func pop_hl(b uint8) {
 	fmt.Printf("POP hl: %X\n", b)
@@ -417,7 +471,11 @@ func pop_hl(b uint8) {
 	//12 cicles
 }
 func ld_xx_a(b uint8) {
-	
+	var val uint16 = uint16(readByte(regs.pc))
+	regs.pc++
+	fmt.Printf("LDH (0xFF00 + %X), a: %X\n", val, b)
+	writeByte(0xFF00+val, regs.a)
+	//12 cicles
 }
 func rst_18(b uint8) {
 	fmt.Printf("RST 18: %X\n", b)
@@ -427,7 +485,32 @@ func rst_18(b uint8) {
 	//32 cicles
 }
 func sbc_a_xx(b uint8) {
-	
+	var val uint8 = readByte(regs.pc)
+	regs.pc++
+	fmt.Printf("SBC a, %X: %X\n", val, b)
+	regs.setFlags(SUBTRACT)
+	if regs.getFlag(CARRY){
+		val++
+	}
+	if val > regs.a {
+		regs.setFlags(CARRY)
+	} else {
+		regs.clearFlags(CARRY)
+	}
+	if (val & 0x0F) > (regs.a & 0x0F) {
+		regs.setFlags(HALFCARRY)
+	} else{
+		regs.clearFlags(HALFCARRY)
+	}
+
+	regs.a -= val
+
+	if regs.a != 0 {
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
+	//8 cicles
 }
 func call_c_aabb(b uint8) {
 	var dest uint16 = read16bits(regs.pc)
@@ -449,7 +532,7 @@ func jp_c_aabb(b uint8) {
 	//12 cicles
 }
 func reti(b uint8) {
-	
+	fmt.Printf("falta-RETI: %X\n", b)
 }
 func ret_c(b uint8) {
 	fmt.Printf("RET c: %X\n", b)
@@ -467,7 +550,29 @@ func rst_10(b uint8) {
 	//32 cicles
 }
 func sub_xx(b uint8) {
-	
+	var val uint8 = readByte(regs.pc)
+	regs.pc++
+	fmt.Printf("SUB %X: %X\n", val, b)
+	regs.setFlags(SUBTRACT)
+	if val > regs.a {
+		regs.setFlags(CARRY)
+	} else {
+		regs.clearFlags(CARRY)
+	}
+	if (val & 0x0F) > (regs.a & 0x0F) {
+		regs.setFlags(HALFCARRY)
+	} else{
+		regs.clearFlags(HALFCARRY)
+	}
+
+	regs.a -= val
+
+	if regs.a != 0 {
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
+	//8 cicles
 }
 func push_de(b uint8) {
 	fmt.Printf("PUSH de: %X\n", b)
@@ -516,11 +621,39 @@ func rst_08(b uint8) {
 	//32 cicles
 }
 func adc_a_xx(b uint8) {
+	var val uint8 = readByte(regs.pc)
+	regs.pc++
+	fmt.Printf("ADC a, %X: %X\n", val, b)
+	regs.clearFlags(SUBTRACT)
+	var result uint16 = 0
+	if regs.getFlag(CARRY){
+		result = 1
+	}
+	result += uint16(regs.a) + uint16(val)
+	if (result & 0xFF00) > 0{
+		regs.setFlags(CARRY)
+	} else{
+		regs.clearFlags(CARRY)
+	}
+	if ((regs.a & 0x0F) + (val & 0x0F)) > 0x0F{
+		regs.setFlags(HALFCARRY)
+	} else{
+		regs.clearFlags(HALFCARRY)
+	}
+
+	regs.a = uint8(result & 0x00FF)
 	
+	if regs.a != 0{
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
+	//8 cicles
 }
 func call_aabb(b uint8) {
 	var dest uint16 = read16bits(regs.pc)
 	regs.pc += 2
+	fmt.Printf("CALL %X: %X\n", dest, b)
 	write16bits(regs.sp, regs.pc)
 	regs.sp -= 2
 	regs.pc = dest
@@ -569,7 +702,31 @@ func rst_oo(b uint8) {
 	//32 cicles
 }
 func add_a_xx(b uint8) {
-	
+	var val uint8 = readByte(regs.pc)
+	regs.pc++
+	fmt.Printf("ADD a, %X: %X\n", val, b)
+	regs.clearFlags(SUBTRACT)
+	var result uint16
+	result = uint16(regs.a) + uint16(val)
+	if ((regs.a & 0x0F) + (val & 0x0F)) > 0x0F{
+		regs.setFlags(HALFCARRY)
+	} else{
+		regs.clearFlags(HALFCARRY)
+	}
+	if (result & 0xFF00) > 0{
+		regs.setFlags(CARRY)
+	} else{
+		regs.clearFlags(CARRY)
+	}
+
+	regs.a = uint8(result & 0x00FF)
+
+	if regs.a != 0{
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
+	//8 cicles
 }
 func push_bc(b uint8) {
 	fmt.Printf("PUSH bc: %X\n", b)
@@ -1752,68 +1909,6 @@ func dec_bc(b uint8) {
 	regs.bc_write(regs.bc_read() - 1)
 	//8 cicles
 }
-/*
-registos 
-AF   --> accumulator e flags
-BC   --> pode ser acedido como B ou C 
-DE   -->
-HL   -->
-SP   --> stack pointer
-PC   --> program counter
-*/
-type registers struct{
-	a  uint8;
-	f  uint8;
-	
-	b  uint8;
-	c  uint8;
-	
-	d  uint8;
-	e  uint8;
-	
-	h  uint8;
-	l  uint8;
-	
-	sp uint16;
-	pc uint16;
-}
-func (r *registers)af_write(data uint16) {
-	r.a = uint8((data & 0xFF00) >> 8)
-	r.f = uint8(data & 0x00FF)
-}
-func (r *registers)af_read() uint16{
-	return uint16((uint16(r.a) << 8) | uint16(r.f)) 
-}
-func (r *registers)bc_write(data uint16) {
-	r.b = uint8((data & 0xFF00) >> 8)
-	r.c = uint8(data & 0x00FF)
-}
-func (r *registers)bc_read() uint16{
-	return uint16((uint16(r.b) << 8) | uint16(r.c)) 
-}
-func (r *registers)hl_write(data uint16) {
-	r.h = uint8((data & 0xFF00) >> 8)
-	r.l = uint8(data & 0x00FF)	
-}
-func (r *registers)hl_read() uint16 {
-	return uint16((uint16(r.h) << 8) | uint16(r.l))
-}
-func (r *registers)de_write(data uint16){
-	r.d = uint8((data & 0xFF00) >> 8)
-	r.e = uint8(data & 0x00FF)
-}
-func (r *registers)de_read() uint16 {
-	return uint16((uint16(r.d) << 8) | uint16(r.e))
-}
-func (r *registers)setFlags(f flag){
-	r.f |= uint8(f)
-}
-func (r *registers)clearFlags(f flag) {
-	r.f = r.f &^ uint8(f)
-}
-func (r *registers)getFlag(f flag) bool{
-	return (r.f & uint8(f)) > 0
-}
 
 var regs registers
 
@@ -1862,7 +1957,7 @@ func Reset() {
 }
 
 func Fetch_decode() {
-	fmt.Printf("%+v\n", regs)
+	fmt.Printf("%v\n", &regs)
 	var op = readByte(regs.pc)
 	fmt.Println(op)
 	regs.pc++
