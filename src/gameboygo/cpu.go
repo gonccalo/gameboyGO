@@ -171,7 +171,8 @@ var ops = [0x100]operations{
 	sub_x,		//0x92 
 	sub_x,		//0x93 
 	sub_x,		//0x94 
-	sub_x,		//0x95 
+	sub_x,		//0x95
+	sub_x,		//0x96 
 	sub_x,		//0x97
 	sbc_a_x,	//0x98 		
 	sbc_a_x,	//0x99 		
@@ -276,27 +277,76 @@ var ops = [0x100]operations{
 	unknown,	//0xFC
 	unknown,	//0xFD
 	cp_xx,		//0xFE
-	rst_38}		//0xFF
+	rst_38,}	//0xFF
 func rst_38(b uint8) {
-	
+	fmt.Printf("RST 38: %X\n", b)
+	write16bits(regs.sp, regs.pc)
+	regs.sp -= 2
+	regs.pc = 0x0038
+	//32 cicles
 }
 func cp_xx(b uint8) {
-	
+	fmt.Printf("CP xx: %X\n", b)
+	regs.setFlags(SUBTRACT)
+	var val uint8 = readByte(regs.pc)
+	regs.pc++
+	if regs.a == val{
+		regs.setFlags(ZERO)
+	} else{
+		regs.clearFlags(ZERO)
+	}
+	if (val & 0x0F) > (regs.a & 0x0F) {
+		regs.setFlags(HALFCARRY)
+	} else{
+		regs.clearFlags(HALFCARRY)
+	}
+	if val > regs.a{
+		regs.setFlags(CARRY)
+	} else{
+		regs.clearFlags(CARRY)
+	}
 }
 func ei(b uint8) {
 	
 }
 func ld_a_aabb(b uint8) {
-	
+	var address uint16 = read16bits(regs.pc)
+	regs.pc += 2  
+	var val uint8 = readByte(address)
+	fmt.Printf("LD a, %X: %X\n", address, b)
+	regs.a = val
+	//16 cicles
 }
 func ld_sp_hl(b uint8) {
-	
+	fmt.Printf("LD sp, hl: %X\n", b)
+	regs.sp = regs.hl_read()
+	//8 cicles
 }
 func ld_hl_sp(b uint8) {
-	
+	fmt.Printf("LDHL sp, n: %X\n", b)
+	regs.clearFlags(ZERO|SUBTRACT)
+	var val int8 = int8(readByte(regs.pc))
+	regs.pc++
+	var res uint32 = uint32(int16(regs.sp) + int16(val))
+	if ((uint16(val) & 0x0F) + (regs.sp & 0x0F)) > 0x0F{
+		regs.setFlags(HALFCARRY)
+	} else{
+		regs.clearFlags(HALFCARRY)
+	}
+	if (res & 0xFF0000) > 0 {
+		regs.setFlags(CARRY)
+	} else {
+		regs.clearFlags(CARRY)
+	}
+	regs.hl_write(uint16(0xFFFF&res))
+	//12 cicles
 }
 func rst_30(b uint8) {
-	
+	fmt.Printf("RST 30: %X\n", b)
+	write16bits(regs.sp, regs.pc)
+	regs.sp -= 2
+	regs.pc =0x0030
+	//32 cicles
 }
 func or_xx(b uint8) {
 	
@@ -323,7 +373,11 @@ func ldh_a_xx(b uint8) {
 	
 }
 func rst_28(b uint8) {
-	
+	fmt.Printf("RST 28: %X\n", b)
+	write16bits(regs.sp, regs.pc)
+	regs.sp -= 2
+	regs.pc =0x0028
+	//32 cicles
 }
 func xor_xx(b uint8) {
 	
@@ -338,7 +392,11 @@ func add_sp_xx(b uint8) {
 	
 }
 func rst_20(b uint8) {
-	
+	fmt.Printf("RST 20: %X\n", b)
+	write16bits(regs.sp, regs.pc)
+	regs.sp -= 2
+	regs.pc =0x0020
+	//32 cicles
 }
 func and_xx(b uint8) {
 	
@@ -362,7 +420,11 @@ func ld_xx_a(b uint8) {
 	
 }
 func rst_18(b uint8) {
-	
+	fmt.Printf("RST 18: %X\n", b)
+	write16bits(regs.sp, regs.pc)
+	regs.sp -= 2
+	regs.pc =0x0018
+	//32 cicles
 }
 func sbc_a_xx(b uint8) {
 	
@@ -390,10 +452,19 @@ func reti(b uint8) {
 	
 }
 func ret_c(b uint8) {
-	
+	fmt.Printf("RET c: %X\n", b)
+	if regs.getFlag(CARRY) {
+		dest := read16bits(regs.sp)
+		regs.sp += 2
+		regs.pc = dest
+	}
 }
 func rst_10(b uint8) {
-	
+	fmt.Printf("RST 10: %X\n", b)
+	write16bits(regs.sp, regs.pc)
+	regs.sp -= 2
+	regs.pc =0x0010
+	//32 cicles
 }
 func sub_xx(b uint8) {
 	
@@ -430,16 +501,29 @@ func pop_de(b uint8) {
 	//12 cicles
 }
 func ret_nc(b uint8) {
-	
+	fmt.Printf("RET nc: %X\n", b)
+	if !regs.getFlag(CARRY) {
+		dest := read16bits(regs.sp)
+		regs.sp += 2
+		regs.pc = dest
+	}
 }
 func rst_08(b uint8) {
-	
+	fmt.Printf("RST 08: %X\n", b)
+	write16bits(regs.sp, regs.pc)
+	regs.sp -= 2
+	regs.pc =0x0008
+	//32 cicles
 }
 func adc_a_xx(b uint8) {
 	
 }
 func call_aabb(b uint8) {
-	
+	var dest uint16 = read16bits(regs.pc)
+	regs.pc += 2
+	write16bits(regs.sp, regs.pc)
+	regs.sp -= 2
+	regs.pc = dest
 }
 func call_z_aabb(b uint8) {
 	var dest uint16 = read16bits(regs.pc)
@@ -464,13 +548,25 @@ func jp_z_aabb(b uint8) {
 	//12 cicles
 }
 func ret(b uint8) {
-	
+	fmt.Printf("RET: %X\n", b)
+	dest := read16bits(regs.sp)
+	regs.sp += 2
+	regs.pc = dest
 }
 func ret_z(b uint8) {
-	
+	fmt.Printf("RET z: %X\n", b)
+	if regs.getFlag(ZERO) {
+		dest := read16bits(regs.sp)
+		regs.sp += 2
+		regs.pc = dest
+	}
 }
 func rst_oo(b uint8) {
-	
+	fmt.Printf("RST 00: %X\n", b)
+	write16bits(regs.sp, regs.pc)
+	regs.sp -= 2
+	regs.pc =0x0000
+	//32 cicles
 }
 func add_a_xx(b uint8) {
 	
@@ -512,7 +608,13 @@ func pop_bc(b uint8) {
 	//12 cicles
 }
 func ret_nz(b uint8) {
-	
+	fmt.Printf("RET nz: %X\n", b)
+	if !regs.getFlag(ZERO) {
+		dest := read16bits(regs.sp)
+		regs.sp += 2
+		regs.pc = dest
+	}
+	//8 cicles
 }
 func cp_x(b uint8) {
 	fmt.Printf("CP x: %X\n", b)
@@ -1760,9 +1862,10 @@ func Reset() {
 }
 
 func Fetch_decode() {
+	fmt.Printf("%+v\n", regs)
 	var op = readByte(regs.pc)
+	fmt.Println(op)
 	regs.pc++
 	ops[op](op)
-
 }
 
