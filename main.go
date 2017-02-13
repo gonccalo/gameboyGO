@@ -10,8 +10,9 @@ func main() {
     gameboygo.Load_rom("Tetris.gb")
     fmt.Printf("rom: %+v\n", gameboygo.Head)
     gameboygo.Reset()
-    for i := 0; i < 100; i++ {
-    	gameboygo.Fetch_decode()
-    }
+    //for i := 0; i < 1000000; i++ {
+    	gameboygo.Execute()
+    //}
+    gameboygo.PrintStats()
     
 }
