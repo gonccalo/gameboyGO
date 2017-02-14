@@ -9,8 +9,6 @@ var Wram 		= ram[0xC000:0xE000]
 var Oram 		= ram[0xFE00:0xFEA0]
 var Io 			= ram[0xFF00:0xFF80]
 var Hram 		= ram[0xFF80:0xFFFF]
-var InterruptFlag 	= 	&ram[0xFF0F]
-var InterruptEnable =	&ram[0xFFFF]
 
 
 func writeByte(addr uint16, b uint8) bool{
@@ -41,6 +39,9 @@ func writeByte(addr uint16, b uint8) bool{
 	return true
 }
 func readByte(addr uint16) uint8{
+	if addr == 0xFF00{
+		return getKeys(ram[addr])
+	}
 	return ram[addr]
 }
 func read16bits(addr uint16) uint16{
@@ -56,13 +57,13 @@ func getTimerFreq() int{ //0 if clock is stoped or frequency if started
 	}
 	switch ram[0xFF07] & 0x03{
 		case 0x00:
-			return 4096
+			return CPU_FREQ/4096
 		case 0x01:
-			return 262144
+			return CPU_FREQ/262144
 		case 0x02:
-			return 65536
+			return CPU_FREQ/65536
 		case 0x03:
-			return 16384
+			return CPU_FREQ/16384
 		default:
 			return 0
 	}
@@ -72,12 +73,6 @@ func incTimer() {
 	if ram[0xFF05] == 0 {
 		setInterruptsFlag(TIMER)
 		ram[0xFF05] = ram[0xFF06]
-		fmt.Println("TIMER INTERRUPT\n\n\n")
+		fmt.Println("TIMER INTERRUPT")
 	}
-}
-func setInterruptsFlag(in interrupt) {
-	*InterruptFlag |= uint8(in) 
-}
-func clearInterruptsFlag(in interrupt) {
-	*InterruptFlag = *InterruptFlag &^ uint8(in)
 }
