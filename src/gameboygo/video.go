@@ -3,10 +3,15 @@ package gameboygo
 import "github.com/veandco/go-sdl2/sdl"
 const(
 	WHITE		uint = 255
-	LIGHT_GRAY	uint = 192
-	DARK_GRAY	uint = 128
+	LIGHT_GRAY	uint = 170
+	DARK_GRAY	uint = 85
 	BLACK		uint = 0
 )
+var colors [4] uint = {WHITE,		//00
+					   LIGHT_GRAY,	//01
+					   DARK_GRAY,	//10
+					   BLACK		//11
+					  }
 
 /*
   Bit 7 - LCD Display Enable             (0=Off, 1=On)
@@ -105,7 +110,7 @@ func Draw(renderer *sdl.Renderer) {
 			for j := 0; j < 16; j+=2 {
 				data1 = tileData[addr+j+1]
 				data0 = tileData[addr+j+0]
-				getPixel(data0, data1, 7)
+				getPixelColor(data0, data1, 7)
 			}
 		}
 	}
@@ -114,10 +119,14 @@ func Draw(renderer *sdl.Renderer) {
 	}
 }
 
-func getPixel(lower, upper, pixNum uint8) uint8{
+func getPixelColor(lower, upper, pixNum uint8) uint{
 	var mask uint8 = (1 << pixNum)
 	if pixNum < 2 {
-		return ((upper & mask) << (1-pixNum)) | ((lower & mask) >> pixNum)	
+		return getColor(((upper & mask) << (1-pixNum)) | ((lower & mask) >> pixNum))
 	}
-	return (upper & mask) >> (pixNum - 1) | (lower & mask) >> pixNum
+	return getColor((upper & mask) >> (pixNum - 1) | ((lower & mask) >> pixNum))
+}
+
+func getColor(code uint8) uint{
+	return colors[((ram[0xFF47] & (0x03 << 2*code)) >> 2*code)]
 }

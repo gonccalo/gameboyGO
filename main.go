@@ -15,6 +15,11 @@ func main() {
         panic(err)
     }
     defer window.Destroy()
+    renderer, err := sdl.CreateRenderer(window, -1, 0)
+    if err != nil {
+    	panic(err)
+    }
+    defer renderer.Destroy()
     gameboygo.Load_rom("Tetris.gb")
     fmt.Printf("rom: %+v\n", gameboygo.Head)
     gameboygo.Reset()
