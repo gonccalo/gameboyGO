@@ -1,5 +1,13 @@
 package gameboygo
 
+import "github.com/veandco/go-sdl2/sdl"
+const(
+	WHITE		uint = 255
+	LIGHT_GRAY	uint = 192
+	DARK_GRAY	uint = 128
+	BLACK		uint = 0
+)
+
 /*
   Bit 7 - LCD Display Enable             (0=Off, 1=On)
   Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
@@ -69,23 +77,47 @@ This register assigns gray shades for sprite palette 1. It works exactly as BGP 
 */
 var Obp1 = &ram[0xFF49]
 
-/*
-TODO
-NOT IMPLEMENTED
-LCD Color Palettes (CGB only)
-FF68 - BCPS/BGPI - CGB Mode Only - Background Palette Index
-FF69 - BCPD/BGPD - CGB Mode Only - Background Palette Data
-FF6A - OCPS/OBPI - CGB Mode Only - Sprite Palette Index
-FF6B - OCPD/OBPD - CGB Mode Only - Sprite Palette Data
+func Draw(renderer *sdl.Renderer) {
+	if (*LcdControl & 0x80) == 0 {  //display off
+		return
+	}
+	if (*LcdControl & 0x01) != 0 { //draw background
+		var offset uint8
+		if (*LcdControl & 0x10) == 0{  //Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
+			var tileData = ram[0x8800:0x97FF]
+			offset = 128
+		} else{
+			var tileData = ram[0x8000:0x8FFF]
+			offset = 0
+		}
+		if (*LcdControl & 0x08) == 0 { //Bit 3 - BG Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
+			var BG_tileMap = ram[0x9800:0x9BFF]
+		} else{
+			var BG_tileMap = ram[0x9C00:0x9FFF]
+		}
+		if (*LcdControl & 0x40) == 0 { //Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
+			var Win_tileMap = ram[0x9800:0x9BFF]
+		} else {
+			var Win_tileMap = ram[0x9C00:0x9FFF]
+		}
+		for _, id := range BG_tileMap {
+			addr := (id + offset) * 16
+			for j := 0; j < 16; j+=2 {
+				data1 = tileData[addr+j+1]
+				data0 = tileData[addr+j+0]
+				getPixel(data0, data1, 7)
+			}
+		}
+	}
+	if (*LcdControl & 0x02) != 0 { //draw sprites
+		
+	}
+}
 
-LCD VRAM Bank (CGB only)
-FF4F - VBK - CGB Mode Only - VRAM Bank
-
-LCD VRAM DMA Transfers (CGB only)
-
-FF51 - HDMA1 - CGB Mode Only - New DMA Source, High
-FF52 - HDMA2 - CGB Mode Only - New DMA Source, Low
-FF53 - HDMA3 - CGB Mode Only - New DMA Destination, High
-FF54 - HDMA4 - CGB Mode Only - New DMA Destination, Low
-FF55 - HDMA5 - CGB Mode Only - New DMA Length/Mode/Start
-*/
+func getPixel(lower, upper, pixNum uint8) uint8{
+	var mask uint8 = (1 << pixNum)
+	if pixNum < 2 {
+		return ((upper & mask) << (1-pixNum)) | ((lower & mask) >> pixNum)	
+	}
+	return (upper & mask) >> (pixNum - 1) | (lower & mask) >> pixNum
+}
