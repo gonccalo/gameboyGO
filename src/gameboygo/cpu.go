@@ -1524,7 +1524,9 @@ func ld_hl_xx(b uint8){
 	CicleCounter += 12
 }
 func scf(b uint8){
-	//fmt.Printf("TODO-SCF: %X\n",b)
+	//fmt.Printf("SCF: %X\n",b)
+	regs.setFlags(CARRY)
+	regs.clearFlags(SUBTRACT|HALFCARRY)
 	CicleCounter += 4
 }
 func jr_c_xx(b uint8){
@@ -1610,7 +1612,13 @@ func ld_a_xx(b uint8){
 	CicleCounter += 8
 }
 func ccf(b uint8){
-	//fmt.Printf("TODO-CCF: %X\n",b)
+	fmt.Printf("CCF: %X\n",b)
+	regs.clearFlags(SUBTRACT|HALFCARRY)
+	if regs.getFlag(CARRY) {
+		regs.clearFlags(CARRY)
+	} else{
+		regs.setFlags(CARRY)
+	}
 	CicleCounter += 4
 } 
 func jr_nc_xx(b uint8) {
@@ -1625,7 +1633,9 @@ func jr_nc_xx(b uint8) {
 	CicleCounter += 8
 }
 func cpl(b uint8) {
-	//fmt.Printf("TODO-CPL: %X\n", b)
+	fmt.Printf("CPL: %X\n", b)
+	regs.setFlags(SUBTRACT|HALFCARRY)
+	regs.a = ^regs.a 
 	CicleCounter += 4
 }
 func ld_l_xx(b uint8) {
