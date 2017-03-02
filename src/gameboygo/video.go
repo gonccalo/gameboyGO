@@ -2,12 +2,12 @@ package gameboygo
 
 import "github.com/veandco/go-sdl2/sdl"
 const(
-	WHITE		uint = 255
-	LIGHT_GRAY	uint = 170
-	DARK_GRAY	uint = 85
-	BLACK		uint = 0
+	WHITE		uint8 = 255
+	LIGHT_GRAY	uint8 = 170
+	DARK_GRAY	uint8 = 85
+	BLACK		uint8 = 0
 )
-var colors [4] uint = {WHITE,		//00
+var colors [4] uint8 = {WHITE,		//00
 					   LIGHT_GRAY,	//01
 					   DARK_GRAY,	//10
 					   BLACK		//11
@@ -82,69 +82,85 @@ This register assigns gray shades for sprite palette 1. It works exactly as BGP 
 */
 var Obp1 = &ram[0xFF49]
 
-func Draw(renderer *sdl.Renderer) {
+func DrawLine(renderer *sdl.Renderer) {
 	if (*LcdControl & 0x80) == 0 {  //display off
 		return
 	}
 	if (*LcdControl & 0x01) != 0 { //draw background
-		var offset uint8
-		var tileMap uint8
-		var tileData uint8
+		var signed bool
+		var tileMap uint16
+		var tileData uint16
 		var currentTile uint8
+		var drawWindow bool
 		if (*LcdControl & 0x10) == 0{  //Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
-			tileData = ram[0x8800:0x97FF]
-			offset = 128
+			tileData = 0x8800
+			signed = true
 		} else{
-			tileData = ram[0x8000:0x8FFF]
-			offset = 0
+			tileData = 0x8000
+			signed = false
 		}
 		
 		if ((*LcdControl & 0x20) == 1) && (*Ly > *Wy) {      //Bit 5 - Window Display Enable(0=Off, 1=On)
 			//drawing window
+			drawWindow = true
 			if (*LcdControl & 0x40) == 0 { //Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
-				tileMap = ram[0x9800:0x9BFF]
+				tileMap = 0x9800
 			} else {
-				tileMap = ram[0x9C00:0x9FFF]
+				tileMap = 0x9C00
 			}
 			currentTile = *Ly - *Wy
 		} else{
+			drawWindow = false
 			if (*LcdControl & 0x08) == 0 { //Bit 3 - BG Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
-				tileMap = ram[0x9800:0x9BFF]
+				tileMap = 0x9800
 			} else{
-				tileMap = ram[0x9C00:0x9FFF]
+				tileMap = 0x9C00
 			}
 			currentTile = *ScY + *Ly
 		}
-		var tileLine uint8 = currentTile
-
-
-
-
-
-		/* wrong?
-		for _, id := range BG_tileMap {
-			addr := (id + offset) * 16
-			for j := 0; j < 16; j+=2 {
-				data1 = tileData[addr+j+1]
-				data0 = tileData[addr+j+0]
-				getPixelColor(data0, data1, 7)
+		/*
+		tiles are 8*8 pixels
+		TODO: 8*16 pix tiles
+		Background Tile Map contains the numbers of tiles to be displayed. It is organized
+ 		as 32 rows of 32 bytes each. Each byte contains a number of a tile to be displayed
+ 		*/
+		var tileLine uint16 = (uint16(currentTile)/8)*32
+		var x uint8
+		var i uint8
+		for i = 0; i < 160; i++ {
+			if drawWindow && (i >= *Wx) { // window
+				x = i - *Wx
+			} else{
+				x = i + *ScX
 			}
+			var tileNumAddress uint16 = tileMap + tileLine + (uint16(x)/8)
+			var tileAddr uint16
+			if signed {
+				tileAddr = tileData + (uint16( int16(int8(ram[tileNumAddr])) + 128 ) * 16) //maybe this works
+			} else{
+				tileAddr = tileData + (uint16(ram[tileNumAddress]) * 16)
+			}
+			var l uint16 = (currentTile % 8) * 2 //line of the tile that we are drawing: each tile has 8 lines and each line is 2 bytes
+			var data0 = ram[tileAddr + l + 0]
+			var data1 = ram[tileAddr + l + 1]
+			var c = getPixelColor(data0, data1, 7-(x%8))
+			renderer.SetDrawColor(c,c,c,255)
+			renderer.DrawPoint(i,*Ly)
 		}
-		*/
 	}
 	if (*LcdControl & 0x02) != 0 { //draw sprites
 		
 	}
 }
 
-func getPixelColor(lower, upper, pixNum uint8) uint{
-	var mask uint8 = (1 << pixNum)
-	if pixNum < 2 {
-		return getColor(((upper & mask) << (1-pixNum)) | ((lower & mask) >> pixNum))
+func getPixelColor(lower, upper, bitNum uint8) uint{
+	var mask uint8 = (1 << bitNum)
+	if bitNum < 2 {
+		return getColor(((upper & mask) << (1-bitNum)) | ((lower & mask) >> bitNum))
 	}
-	return getColor((upper & mask) >> (pixNum - 1) | ((lower & mask) >> pixNum))
+	return getColor((upper & mask) >> (bitNum - 1) | ((lower & mask) >> bitNum))
 }
 
 func getColor(code uint8) uint{
-	return colors[((ram[0xFF47] & (0x03 << 2*code)) >> 2*code)]
+	return colors[((*Bgp & (0x03 << 2*code)) >> 2*code)]
 }
