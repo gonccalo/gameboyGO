@@ -25,11 +25,15 @@ func main() {
     gameboygo.Reset()
 	for{
 		gameboygo.LastTimer = 0
+		gameboygo.LastScanLine = 0
 		t := time.Now()
 		for gameboygo.CicleCounter = 0; gameboygo.CicleCounter < gameboygo.CPU_FREQ; {
 			handleInput()
 			gameboygo.Execute()
+			gameboygo.UpdateGPU(renderer)
 		}
+		renderer.Present() 
+		fmt.Println(time.Second - time.Since(t))
 		time.Sleep(time.Second - time.Since(t))
 	}
 }

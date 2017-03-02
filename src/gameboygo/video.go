@@ -1,17 +1,19 @@
 package gameboygo
 
 import "github.com/veandco/go-sdl2/sdl"
+import "fmt"
 const(
 	WHITE		uint8 = 255
 	LIGHT_GRAY	uint8 = 170
 	DARK_GRAY	uint8 = 85
 	BLACK		uint8 = 0
+
+	SCAN_CICLES int   = 456
 )
-var colors [4] uint8 = {WHITE,		//00
+var colors = [4]uint8 {WHITE,		//00
 					   LIGHT_GRAY,	//01
 					   DARK_GRAY,	//10
-					   BLACK		//11
-					  }
+					   BLACK,}		//11
 
 /*
   Bit 7 - LCD Display Enable             (0=Off, 1=On)
@@ -82,10 +84,27 @@ This register assigns gray shades for sprite palette 1. It works exactly as BGP 
 */
 var Obp1 = &ram[0xFF49]
 
-func DrawLine(renderer *sdl.Renderer) {
-	if (*LcdControl & 0x80) == 0 {  //display off
+var LastScanLine int = 0
+
+func UpdateGPU(renderer *sdl.Renderer) {
+	if (*LcdControl & 0x80) == 0{ //display off
 		return
 	}
+	if (int(CicleCounter/SCAN_CICLES) - LastScanLine) >= 1{ //next scanline
+		LastScanLine = int(CicleCounter/SCAN_CICLES)
+		*Ly += 1
+		if *Ly == 144 { //VBLANK 
+			setInterruptsFlag(V_BLANK)
+			fmt.Println("V_BLANK")
+		} else if *Ly > 153 {  //end VBLANK
+			*Ly = 0
+		} else{
+			DrawLine(renderer)
+		}
+	}
+
+}
+func DrawLine(renderer *sdl.Renderer) {
 	if (*LcdControl & 0x01) != 0 { //draw background
 		var signed bool
 		var tileMap uint16
@@ -136,16 +155,16 @@ func DrawLine(renderer *sdl.Renderer) {
 			var tileNumAddress uint16 = tileMap + tileLine + (uint16(x)/8)
 			var tileAddr uint16
 			if signed {
-				tileAddr = tileData + (uint16( int16(int8(ram[tileNumAddr])) + 128 ) * 16) //maybe this works
+				tileAddr = tileData + (uint16( int16(int8(ram[tileNumAddress])) + 128 ) * 16) //maybe this works
 			} else{
 				tileAddr = tileData + (uint16(ram[tileNumAddress]) * 16)
 			}
-			var l uint16 = (currentTile % 8) * 2 //line of the tile that we are drawing: each tile has 8 lines and each line is 2 bytes
+			var l uint16 = (uint16(currentTile) % 8) * 2 //line of the tile that we are drawing: each tile has 8 lines and each line is 2 bytes
 			var data0 = ram[tileAddr + l + 0]
 			var data1 = ram[tileAddr + l + 1]
 			var c = getPixelColor(data0, data1, 7-(x%8))
 			renderer.SetDrawColor(c,c,c,255)
-			renderer.DrawPoint(i,*Ly)
+			renderer.DrawPoint(int(i),int(*Ly))
 		}
 	}
 	if (*LcdControl & 0x02) != 0 { //draw sprites
@@ -153,7 +172,7 @@ func DrawLine(renderer *sdl.Renderer) {
 	}
 }
 
-func getPixelColor(lower, upper, bitNum uint8) uint{
+func getPixelColor(lower, upper, bitNum uint8) uint8{
 	var mask uint8 = (1 << bitNum)
 	if bitNum < 2 {
 		return getColor(((upper & mask) << (1-bitNum)) | ((lower & mask) >> bitNum))
@@ -161,6 +180,6 @@ func getPixelColor(lower, upper, bitNum uint8) uint{
 	return getColor((upper & mask) >> (bitNum - 1) | ((lower & mask) >> bitNum))
 }
 
-func getColor(code uint8) uint{
+func getColor(code uint8) uint8{
 	return colors[((*Bgp & (0x03 << 2*code)) >> 2*code)]
 }
