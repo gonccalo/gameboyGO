@@ -88,23 +88,40 @@ func Draw(renderer *sdl.Renderer) {
 	}
 	if (*LcdControl & 0x01) != 0 { //draw background
 		var offset uint8
+		var tileMap uint8
+		var tileData uint8
+		var currentTile uint8
 		if (*LcdControl & 0x10) == 0{  //Bit 4 - BG & Window Tile Data Select   (0=8800-97FF, 1=8000-8FFF)
-			var tileData = ram[0x8800:0x97FF]
+			tileData = ram[0x8800:0x97FF]
 			offset = 128
 		} else{
-			var tileData = ram[0x8000:0x8FFF]
+			tileData = ram[0x8000:0x8FFF]
 			offset = 0
 		}
-		if (*LcdControl & 0x08) == 0 { //Bit 3 - BG Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
-			var BG_tileMap = ram[0x9800:0x9BFF]
+		
+		if ((*LcdControl & 0x20) == 1) && (*Ly > *Wy) {      //Bit 5 - Window Display Enable(0=Off, 1=On)
+			//drawing window
+			if (*LcdControl & 0x40) == 0 { //Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
+				tileMap = ram[0x9800:0x9BFF]
+			} else {
+				tileMap = ram[0x9C00:0x9FFF]
+			}
+			currentTile = *Ly - *Wy
 		} else{
-			var BG_tileMap = ram[0x9C00:0x9FFF]
+			if (*LcdControl & 0x08) == 0 { //Bit 3 - BG Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
+				tileMap = ram[0x9800:0x9BFF]
+			} else{
+				tileMap = ram[0x9C00:0x9FFF]
+			}
+			currentTile = *ScY + *Ly
 		}
-		if (*LcdControl & 0x40) == 0 { //Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
-			var Win_tileMap = ram[0x9800:0x9BFF]
-		} else {
-			var Win_tileMap = ram[0x9C00:0x9FFF]
-		}
+		var tileLine uint8 = currentTile
+
+
+
+
+
+		/* wrong?
 		for _, id := range BG_tileMap {
 			addr := (id + offset) * 16
 			for j := 0; j < 16; j+=2 {
@@ -113,6 +130,7 @@ func Draw(renderer *sdl.Renderer) {
 				getPixelColor(data0, data1, 7)
 			}
 		}
+		*/
 	}
 	if (*LcdControl & 0x02) != 0 { //draw sprites
 		

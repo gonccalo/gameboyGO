@@ -18,7 +18,7 @@ func writeByte(addr uint16, b uint8) bool{
 		ram[addr] = b
 		ram[0xC000+(addr-0xE000)] = b
 		return true
-	} else if addr == 0xFF04 {				//Divider register
+	} else if (addr == 0xFF04) || (addr == 0xFF44){				//Divider register || LCDC y coordinate
 		ram[addr] = 0x00
 		return true
 	} else if addr == 0xFF46 {				// OAM DMA
@@ -33,7 +33,7 @@ func writeByte(addr uint16, b uint8) bool{
 			writeByte(0xFe00+i, readByte(src+i))
 		}
 		return true
-	} 
+	}
 	ram[addr] = b
 	return true
 }
