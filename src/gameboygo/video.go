@@ -1,7 +1,7 @@
 package gameboygo
 
 import "github.com/veandco/go-sdl2/sdl"
-import "fmt"
+//import "fmt"
 const(
 	WHITE		uint8 = 255
 	LIGHT_GRAY	uint8 = 170
@@ -9,6 +9,12 @@ const(
 	BLACK		uint8 = 0
 
 	SCAN_CICLES int   = 456
+
+	LCD_STAT_HBLANK 	 uint8 = 0x00   
+	LCD_STAT_VBLANK 	 uint8 = 0x01
+	LCD_STAT_OAM_RAM 	 uint8 = 0x02
+	LCD_STAT_DATA2DRIVER uint8 = 0x03
+
 )
 var colors = [4]uint8 {WHITE,		//00
 					   LIGHT_GRAY,	//01
@@ -85,24 +91,70 @@ This register assigns gray shades for sprite palette 1. It works exactly as BGP 
 var Obp1 = &ram[0xFF49]
 
 var LastScanLine int = 0
-
-func UpdateGPU(renderer *sdl.Renderer) {
-	if (*LcdControl & 0x80) == 0{ //display off
+func UpdateGPU(renderer *sdl.Renderer) { 
+	if (*LcdControl & 0x80) == 0{
+		//display off
+		//must clean Ly and set mode 1
+		LastScanLine = 0
+		*Ly = 0
+		setLcdStatMode(LCD_STAT_VBLANK)
 		return
 	}
-	if (int(CicleCounter/SCAN_CICLES) - LastScanLine) >= 1{ //next scanline
-		LastScanLine = int(CicleCounter/SCAN_CICLES)
-		*Ly += 1
-		if *Ly == 144 { //VBLANK 
-			setInterruptsFlag(V_BLANK)
-			fmt.Println("V_BLANK")
-		} else if *Ly > 153 {  //end VBLANK
-			*Ly = 0
+
+	if *Ly >= 144 {
+		if ((*LcdStatus & 0x10) != 0) && ((*LcdStatus & 0x03) != LCD_STAT_VBLANK) {
+			//mode 1: During V-Blank
+			setInterruptsFlag(LCD_STAT)
+		}
+		setLcdStatMode(LCD_STAT_VBLANK)
+	} else{
+		//maybe i should redo all this CicleCounter thing
+		var modeCicles = CicleCounter % SCAN_CICLES
+		if modeCicles < 80{
+			//mode 2: 80 cicles of the 456
+			if ((*LcdStatus & 0x20) != 0) && ((*LcdStatus & 0x03) != LCD_STAT_OAM_RAM) {
+				//if this interrupt is enabled and just changed mode
+				setInterruptsFlag(LCD_STAT)
+			}
+			setLcdStatMode(LCD_STAT_OAM_RAM)
+		} else if modeCicles < (80 + 172) {
+			//mode 3: 172 cicles of the 456
+			setLcdStatMode(LCD_STAT_DATA2DRIVER)
 		} else{
-			DrawLine(renderer)
+			//mode 0: remaining cicles
+			if ((*LcdStatus & 0x08) != 0) && ((*LcdStatus & 0x03) != LCD_STAT_HBLANK) {
+				//if this interrupt is enabled and just changed mode
+				setInterruptsFlag(LCD_STAT)
+			}
+			setLcdStatMode(LCD_STAT_HBLANK)
 		}
 	}
 
+	if (*Ly == *LyC) {
+		//Bit 2 - Coincidence Flag  (0:LYC<>LY, 1:LYC=LY) (Read Only)
+		*LcdStatus |= 0x04
+		if (*LcdStatus & 0x40) != 0 {
+			setInterruptsFlag(LCD_STAT)
+		}
+	} else{
+		*LcdStatus &= 0xFB
+	}
+	if (int(CicleCounter/SCAN_CICLES) - LastScanLine) >= 1{ 
+		//next scanline
+		LastScanLine = int(CicleCounter/SCAN_CICLES)
+		*Ly += 1
+		if *Ly == 144 { 
+			//VBLANK 
+			setInterruptsFlag(V_BLANK)
+		} else if *Ly > 153 {  
+			//end VBLANK
+			*Ly = 0
+			renderer.SetDrawColor(0,0,0,255)
+			renderer.Clear()
+		} else if *Ly < 144{
+			DrawLine(renderer)
+		}
+	}
 }
 func DrawLine(renderer *sdl.Renderer) {
 	if (*LcdControl & 0x01) != 0 { //draw background
@@ -119,7 +171,7 @@ func DrawLine(renderer *sdl.Renderer) {
 			signed = false
 		}
 		
-		if ((*LcdControl & 0x20) == 1) && (*Ly > *Wy) {      //Bit 5 - Window Display Enable(0=Off, 1=On)
+		if ((*LcdControl & 0x20) != 0) && (*Ly > *Wy) {      //Bit 5 - Window Display Enable(0=Off, 1=On)
 			//drawing window
 			drawWindow = true
 			if (*LcdControl & 0x40) == 0 { //Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
@@ -139,13 +191,13 @@ func DrawLine(renderer *sdl.Renderer) {
 		}
 		/*
 		tiles are 8*8 pixels
-		TODO: 8*16 pix tiles
 		Background Tile Map contains the numbers of tiles to be displayed. It is organized
  		as 32 rows of 32 bytes each. Each byte contains a number of a tile to be displayed
  		*/
 		var tileLine uint16 = (uint16(currentTile)/8)*32
 		var x uint8
 		var i uint8
+		//var points [160]sdl.Point
 		for i = 0; i < 160; i++ {
 			if drawWindow && (i >= *Wx) { // window
 				x = i - *Wx
@@ -166,9 +218,10 @@ func DrawLine(renderer *sdl.Renderer) {
 			renderer.SetDrawColor(c,c,c,255)
 			renderer.DrawPoint(int(i),int(*Ly))
 		}
+		renderer.Present()
 	}
 	if (*LcdControl & 0x02) != 0 { //draw sprites
-		
+		//TODO
 	}
 }
 
@@ -182,4 +235,9 @@ func getPixelColor(lower, upper, bitNum uint8) uint8{
 
 func getColor(code uint8) uint8{
 	return colors[((*Bgp & (0x03 << 2*code)) >> 2*code)]
+}
+
+func setLcdStatMode(mode uint8) {
+	*LcdStatus &= 0xFC //clean last mode
+	*LcdStatus |= mode //set
 }
