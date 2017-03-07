@@ -152,6 +152,7 @@ func UpdateGPU(renderer *sdl.Renderer) {
 			renderer.SetDrawColor(0,0,0,255)
 			renderer.Clear()
 		} else if *Ly < 144{
+			//fmt.Printf("LCDCONTROL: %X\n",*LcdControl)
 			DrawLine(renderer)
 		}
 	}

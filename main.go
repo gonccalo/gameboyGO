@@ -5,10 +5,11 @@ import (
 	"gameboygo"
 	"time"
 	"os"
-	"runtime/pprof"
+	//"runtime/pprof"
 	"github.com/veandco/go-sdl2/sdl"
 )
 func main() {
+	/*
 	var cpuprofile string = "prof"
 	f, err := os.Create(cpuprofile)
     if err != nil {
@@ -16,7 +17,7 @@ func main() {
     }
     pprof.StartCPUProfile(f)
     defer pprof.StopCPUProfile()
-	
+	*/
 	sdl.Init(sdl.INIT_EVERYTHING)
 	window, err := sdl.CreateWindow("test", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
         256, 256, sdl.WINDOW_SHOWN)
@@ -72,8 +73,8 @@ func handleInput() {
 		switch eventType.Keysym.Sym{
 		case sdl.K_ESCAPE:
 			sdl.Quit()
-			gameboygo.PrintStats()
-			pprof.StopCPUProfile()
+			//gameboygo.PrintStats()
+			//pprof.StopCPUProfile()
 			os.Exit(0)
 		case sdl.K_RIGHT :	//right
 			gameboygo.KeyReleased(gameboygo.KEY_RIGHT)

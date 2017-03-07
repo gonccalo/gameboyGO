@@ -11,9 +11,6 @@ var Hram 		= ram[0xFF80:0xFFFF]
 
 
 func writeByte(addr uint16, b uint8) bool{
-	if addr < 0x8000 {
-		return false
-	}
 	if addr >= 0xE000 && addr < 0xFE00 {	//echo zone
 		ram[addr] = b
 		ram[0xC000+(addr-0xE000)] = b

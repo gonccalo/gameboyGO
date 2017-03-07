@@ -283,6 +283,8 @@ var CicleCounter int
 var ime bool
 var opstats [0x100]uint
 
+//var debug int
+
 func Reset() {
 	CicleCounter = 0
 	ime = true
@@ -332,7 +334,6 @@ func Reset() {
 }
 
 func Execute() {
-	//fmt.Printf("%v\n", &regs)
 	if tfreq := getTimerFreq(); (tfreq != 0) && ((int(CicleCounter/tfreq) - LastTimer) >= 1) {
 		LastTimer = int(CicleCounter/tfreq)
 		incTimer()
@@ -341,47 +342,36 @@ func Execute() {
 	op := readByte(regs.pc)
 	regs.pc++
 	ops[op](op)
-	//fmt.Printf("%v\n", &regs)
 }
 /*
 func ExecuteDebug() {
-	var last int
 	var input string
-	var debug int
 	//fmt.Printf("%v\n", &regs)
-	for{
-		last = 0
-		t := time.Now()
-		for CicleCounter = 0; CicleCounter < 4194304; {
-			if (int(CicleCounter/1024)-last) >= 1 {
-				last = int(CicleCounter/1024)
-				incTimer()
-			}
-			InterruptExec()
-			var op = readByte(regs.pc)
-			regs.pc++
-			ops[op](op)
-			opstats[op]++
-			//fmt.Printf("%v\n", &regs)
-			if debug == 0 {
-				input = ""
-				//fmt.Scanln(&input)
-				if input == "s" {
-					debug = 100
-				} else if input == "m"{
-					debug = 1000
-				} else if input == "end"{
-					return
-				}	
-			} else{
-				debug--
-			}
-		}
-		time.Sleep(time.Second - time.Since(t))
+	if tfreq := getTimerFreq(); (tfreq != 0) && ((int(CicleCounter/tfreq) - LastTimer) >= 1) {
+		LastTimer = int(CicleCounter/tfreq)
+		incTimer()
+	}
+	InterruptExec()
+	var op = readByte(regs.pc)
+	regs.pc++
+	ops[op](op)
+	opstats[op]++
+	//fmt.Printf("%v\n", &regs)
+	if debug == 0 {
+		input = ""
+		//fmt.Scanln(&input)
+		if input == "s" {
+			debug = 100
+		} else if input == "m"{
+			debug = 1000
+		} else if input == "end"{
+			return
+		}	
+	} else{
+		debug--
 	}
 }
 */
-
 func PrintStats() {
 	//var total uint
 	for i := 0; i < len(opstats); i++ {
@@ -391,8 +381,8 @@ func PrintStats() {
 
 func rst_38(b uint8) {
 	//fmt.Printf("RST 38: %X\n", b)
-	write16bits(regs.sp, regs.pc)
 	regs.sp -= 2
+	write16bits(regs.sp, regs.pc)
 	regs.pc = 0x0038
 	CicleCounter += 16
 }
@@ -458,8 +448,8 @@ func ld_hl_sp(b uint8) {
 }
 func rst_30(b uint8) {
 	//fmt.Printf("RST 30: %X\n", b)
-	write16bits(regs.sp, regs.pc)
 	regs.sp -= 2
+	write16bits(regs.sp, regs.pc)
 	regs.pc =0x0030
 	CicleCounter += 16
 }
@@ -478,8 +468,8 @@ func or_xx(b uint8) {
 }
 func push_af(b uint8) {
 	//fmt.Printf("PUSH af: %X\n", b)
-	write16bits(regs.sp, regs.af_read())
 	regs.sp -= 2
+	write16bits(regs.sp, regs.af_read())
 	CicleCounter += 16
 }
 func di(b uint8) {
@@ -508,8 +498,8 @@ func ldh_a_xx(b uint8) {
 }
 func rst_28(b uint8) {
 	//fmt.Printf("RST 28: %X\n", b)
-	write16bits(regs.sp, regs.pc)
 	regs.sp -= 2
+	write16bits(regs.sp, regs.pc)
 	regs.pc =0x0028
 	CicleCounter += 16
 }
@@ -559,8 +549,8 @@ func add_sp_xx(b uint8) {
 }
 func rst_20(b uint8) {
 	//fmt.Printf("RST 20: %X\n", b)
-	write16bits(regs.sp, regs.pc)
 	regs.sp -= 2
+	write16bits(regs.sp, regs.pc)
 	regs.pc =0x0020
 	CicleCounter += 16
 }
@@ -580,8 +570,8 @@ func and_xx(b uint8) {
 }
 func push_hl(b uint8) {
 	//fmt.Printf("PUSH hl: %X\n", b)
-	write16bits(regs.sp, regs.hl_read())
 	regs.sp -= 2
+	write16bits(regs.sp, regs.hl_read())
 	CicleCounter += 16
 }
 func ld_c_a(b uint8) {
@@ -604,8 +594,8 @@ func ld_xx_a(b uint8) {
 }
 func rst_18(b uint8) {
 	//fmt.Printf("RST 18: %X\n", b)
-	write16bits(regs.sp, regs.pc)
 	regs.sp -= 2
+	write16bits(regs.sp, regs.pc)
 	regs.pc =0x0018
 	CicleCounter += 16
 }
@@ -642,8 +632,8 @@ func call_c_aabb(b uint8) {
 	regs.pc += 2
 	//fmt.Printf("CALL c, %X: %X\n", dest, b)
 	if regs.getFlag(CARRY){
-		write16bits(regs.sp, regs.pc)
 		regs.sp -= 2
+		write16bits(regs.sp, regs.pc)
 		regs.pc = dest
 		CicleCounter += 24
 		return
@@ -681,8 +671,8 @@ func ret_c(b uint8) {
 }
 func rst_10(b uint8) {
 	//fmt.Printf("RST 10: %X\n", b)
-	write16bits(regs.sp, regs.pc)
 	regs.sp -= 2
+	write16bits(regs.sp, regs.pc)
 	regs.pc =0x0010
 	CicleCounter += 16
 }
@@ -713,8 +703,8 @@ func sub_xx(b uint8) {
 }
 func push_de(b uint8) {
 	//fmt.Printf("PUSH de: %X\n", b)
-	write16bits(regs.sp, regs.de_read())
 	regs.sp -= 2
+	write16bits(regs.sp, regs.de_read())
 	CicleCounter += 16
 }
 func call_nc_aabb(b uint8) {
@@ -722,8 +712,8 @@ func call_nc_aabb(b uint8) {
 	regs.pc += 2
 	//fmt.Printf("CALL nc, %X: %X\n", dest, b)
 	if !regs.getFlag(CARRY){
-		write16bits(regs.sp, regs.pc)
 		regs.sp -= 2
+		write16bits(regs.sp, regs.pc)
 		regs.pc = dest
 		CicleCounter += 24
 		return
@@ -760,8 +750,8 @@ func ret_nc(b uint8) {
 }
 func rst_08(b uint8) {
 	//fmt.Printf("RST 08: %X\n", b)
-	write16bits(regs.sp, regs.pc)
 	regs.sp -= 2
+	write16bits(regs.sp, regs.pc)
 	regs.pc = 0x0008
 	CicleCounter += 16
 }
@@ -799,8 +789,8 @@ func call_aabb(b uint8) {
 	var dest uint16 = read16bits(regs.pc)
 	regs.pc += 2
 	//fmt.Printf("CALL %X: %X\n", dest, b)
-	write16bits(regs.sp, regs.pc)
 	regs.sp -= 2
+	write16bits(regs.sp, regs.pc)
 	regs.pc = dest
 	CicleCounter += 24
 }
@@ -809,8 +799,8 @@ func call_z_aabb(b uint8) {
 	regs.pc += 2
 	//fmt.Printf("CALL z, %X: %X\n", dest, b)
 	if regs.getFlag(ZERO){
-		write16bits(regs.sp, regs.pc)
 		regs.sp -= 2
+		write16bits(regs.sp, regs.pc)
 		regs.pc = dest
 		CicleCounter += 24
 		return
@@ -851,8 +841,8 @@ func ret_z(b uint8) {
 }
 func rst_oo(b uint8) {
 	//fmt.Printf("RST 00: %X\n", b)
-	write16bits(regs.sp, regs.pc)
 	regs.sp -= 2
+	write16bits(regs.sp, regs.pc)
 	regs.pc =0x0000
 	CicleCounter += 16
 }
@@ -885,8 +875,8 @@ func add_a_xx(b uint8) {
 }
 func push_bc(b uint8) {
 	//fmt.Printf("PUSH bc: %X\n", b)
-	write16bits(regs.sp, regs.bc_read())
 	regs.sp -= 2
+	write16bits(regs.sp, regs.bc_read())
 	CicleCounter += 16
 }
 func call_nz_aabb(b uint8) {
@@ -894,8 +884,8 @@ func call_nz_aabb(b uint8) {
 	regs.pc += 2
 	//fmt.Printf("CALL nz, %X: %X\n", dest, b)
 	if !regs.getFlag(ZERO){
-		write16bits(regs.sp, regs.pc)
 		regs.sp -= 2
+		write16bits(regs.sp, regs.pc)
 		regs.pc = dest
 		CicleCounter += 24
 		return
@@ -1612,7 +1602,7 @@ func ld_a_xx(b uint8){
 	CicleCounter += 8
 }
 func ccf(b uint8){
-	fmt.Printf("CCF: %X\n",b)
+	//fmt.Printf("CCF: %X\n",b)
 	regs.clearFlags(SUBTRACT|HALFCARRY)
 	if regs.getFlag(CARRY) {
 		regs.clearFlags(CARRY)
@@ -1633,7 +1623,7 @@ func jr_nc_xx(b uint8) {
 	CicleCounter += 8
 }
 func cpl(b uint8) {
-	fmt.Printf("CPL: %X\n", b)
+	//fmt.Printf("CPL: %X\n", b)
 	regs.setFlags(SUBTRACT|HALFCARRY)
 	regs.a = ^regs.a 
 	CicleCounter += 4
