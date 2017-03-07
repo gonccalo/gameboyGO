@@ -4,9 +4,10 @@ Gameboy emulator in go
 * Almost all instructions implemented
 * Interrupts
 * Joypad
+* Background almost complete
 
+![deepinscreenshot20170307225329](https://cloud.githubusercontent.com/assets/5223817/23681923/026384fa-0389-11e7-9508-df1192439840.png)
 
-![deepinscreenshot20170304230840](https://cloud.githubusercontent.com/assets/5223817/23582991/8f6f1cbc-012f-11e7-8570-60e3a221107f.png)
 
 ##TODO:
 * Video (in progress)
