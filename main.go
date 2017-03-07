@@ -30,7 +30,7 @@ func main() {
     	panic(err)
     }
     defer renderer.Destroy()
-    gameboygo.Load_rom("Tetris.gb")
+    gameboygo.Load_rom("Bc.gb")
     fmt.Printf("rom: %+v\n", gameboygo.Head)
     gameboygo.Reset()
 	for{

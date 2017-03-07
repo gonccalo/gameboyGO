@@ -91,7 +91,8 @@ This register assigns gray shades for sprite palette 1. It works exactly as BGP 
 var Obp1 = &ram[0xFF49]
 
 var LastScanLine int = 0
-func UpdateGPU(renderer *sdl.Renderer) { 
+func UpdateGPU(renderer *sdl.Renderer) {
+	//fmt.Printf("LCDC: %X\n", *LcdControl)
 	if (*LcdControl & 0x80) == 0{
 		//display off
 		//must clean Ly and set mode 1
@@ -100,7 +101,6 @@ func UpdateGPU(renderer *sdl.Renderer) {
 		setLcdStatMode(LCD_STAT_VBLANK)
 		return
 	}
-
 	if *Ly >= 144 {
 		if ((*LcdStatus & 0x10) != 0) && ((*LcdStatus & 0x03) != LCD_STAT_VBLANK) {
 			//mode 1: During V-Blank
@@ -235,7 +235,7 @@ func getPixelColor(lower, upper, bitNum uint8) uint8{
 }
 
 func getColor(code uint8) uint8{
-	return colors[((*Bgp & (0x03 << 2*code)) >> 2*code)]
+	return colors[((*Bgp & (0x03 << (2*code))) >> (2*code))]
 }
 
 func setLcdStatMode(mode uint8) {

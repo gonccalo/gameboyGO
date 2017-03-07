@@ -22,34 +22,29 @@ func InterruptExec() {
 		write16bits(regs.sp, regs.pc)
 		regs.sp -= 2
 		regs.pc = 0x40
-
-	}
-	if (toExec & uint8(LCD_STAT)) != 0 {
+	} else if (toExec & uint8(LCD_STAT)) != 0 {
 		ime = false
 		clearInterruptsFlag(LCD_STAT)
-		write16bits(regs.sp, regs.pc)
 		regs.sp -= 2
+		write16bits(regs.sp, regs.pc)
 		regs.pc = 0x48
-	}
-	if (toExec & uint8(TIMER)) != 0 {
+	} else if (toExec & uint8(TIMER)) != 0 {
 		ime = false
 		clearInterruptsFlag(TIMER)
-		write16bits(regs.sp, regs.pc)
 		regs.sp -= 2
+		write16bits(regs.sp, regs.pc)
 		regs.pc = 0x50
-	}
-	if (toExec & uint8(SERIAL)) != 0 {
+	} else if (toExec & uint8(SERIAL)) != 0 {
 		ime = false
 		clearInterruptsFlag(SERIAL)
-		write16bits(regs.sp, regs.pc)
 		regs.sp -= 2
+		write16bits(regs.sp, regs.pc)
 		regs.pc = 0x58
-	}
-	if (toExec & uint8(JOYPAD)) != 0 {
+	} else if (toExec & uint8(JOYPAD)) != 0 {
 		ime = false
 		clearInterruptsFlag(JOYPAD)
-		write16bits(regs.sp, regs.pc)
 		regs.sp -= 2
+		write16bits(regs.sp, regs.pc)
 		regs.pc = 0x60
 	}
 }

@@ -1,5 +1,5 @@
 package gameboygo
-import "fmt"
+//import "fmt"
 var ram [0x10000]uint8
 var Rom1 		= ram[0x0000:0x4000]
 var RomN 		= ram[0x4000:0x8000]
@@ -69,6 +69,6 @@ func incTimer() {
 	if ram[0xFF05] == 0 {
 		setInterruptsFlag(TIMER)
 		ram[0xFF05] = ram[0xFF06]
-		fmt.Println("TIMER INTERRUPT")
+		//fmt.Println("TIMER INTERRUPT")
 	}
 }
