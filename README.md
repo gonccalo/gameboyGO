@@ -6,7 +6,7 @@ Gameboy emulator in go
 * Joypad
 * Background almost complete
 
-![deepinscreenshot20170307225329](https://cloud.githubusercontent.com/assets/5223817/23681923/026384fa-0389-11e7-9508-df1192439840.png)
+![deepinscreenshot20170309010633](https://cloud.githubusercontent.com/assets/5223817/23731437/9c5dbfd0-0465-11e7-9f1b-f61d507dd404.png)
 
 
 ##TODO:
