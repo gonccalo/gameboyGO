@@ -25,14 +25,22 @@ func main() {
         panic(err)
     }
     defer window.Destroy()
-    renderer, err := sdl.CreateRenderer(window, -1, 0)
+    renderer, err := sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
     if err != nil {
     	panic(err)
     }
     defer renderer.Destroy()
+    
+    texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, gameboygo.WIDTH, gameboygo.HEIGHT)
+    if err != nil {
+    	panic(err)
+    }
+
     gameboygo.Load_rom("Bc.gb")
     fmt.Printf("rom: %+v\n", gameboygo.Head)
     gameboygo.Reset()
+    renderer.SetDrawColor(0,0,0,255)
+	renderer.Clear()
 	for{
 		gameboygo.LastTimer = 0
 		gameboygo.LastScanLine = 0
@@ -40,7 +48,7 @@ func main() {
 		for gameboygo.CicleCounter = 0; gameboygo.CicleCounter < gameboygo.CPU_FREQ; {
 			handleInput()
 			gameboygo.Execute()
-			gameboygo.UpdateGPU(renderer)
+			gameboygo.UpdateGPU(renderer, texture)
 		} 
 		fmt.Println(time.Second - time.Since(t))
 		time.Sleep(time.Second - time.Since(t))

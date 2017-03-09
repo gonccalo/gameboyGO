@@ -1,7 +1,8 @@
 package gameboygo
 
 import "github.com/veandco/go-sdl2/sdl"
-//import "fmt"
+import "unsafe"
+import "fmt"
 const(
 	WHITE		uint8 = 255
 	LIGHT_GRAY	uint8 = 170
@@ -15,12 +16,20 @@ const(
 	LCD_STAT_OAM_RAM 	 uint8 = 0x02
 	LCD_STAT_DATA2DRIVER uint8 = 0x03
 
+	WIDTH		int   = 160
+	HEIGHT		int   = 144
+	PITCH   	int   = WIDTH * 4
+	BUFFER_SIZE int   = WIDTH*HEIGHT*4
 )
 var colors = [4]uint8 {WHITE,		//00
 					   LIGHT_GRAY,	//01
 					   DARK_GRAY,	//10
 					   BLACK,}		//11
 
+//var pixels [BUFFER_SIZE]uint8
+//var p_pixels unsafe.Pointer = unsafe.Pointer(&pixels)
+var pitch int = PITCH
+var p_pixels unsafe.Pointer
 /*
   Bit 7 - LCD Display Enable             (0=Off, 1=On)
   Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
@@ -91,8 +100,7 @@ This register assigns gray shades for sprite palette 1. It works exactly as BGP 
 var Obp1 = &ram[0xFF49]
 
 var LastScanLine int = 0
-func UpdateGPU(renderer *sdl.Renderer) {
-	//fmt.Printf("LCDC: %X\n", *LcdControl)
+func UpdateGPU(renderer *sdl.Renderer, tex *sdl.Texture) {
 	if (*LcdControl & 0x80) == 0{
 		//display off
 		//must clean Ly and set mode 1
@@ -148,11 +156,12 @@ func UpdateGPU(renderer *sdl.Renderer) {
 			setInterruptsFlag(V_BLANK)
 		} else if *Ly > 153 {  
 			//end VBLANK
-			*Ly = 0
-			renderer.SetDrawColor(0,0,0,255)
-			renderer.Clear()
+			*Ly = 255
+			tex.Unlock()
+			renderer.Copy(tex,nil,nil)
+			renderer.Present()
 		} else if *Ly < 144{
-			//fmt.Printf("LCDCONTROL: %X\n",*LcdControl)
+			tex.Lock(nil, &p_pixels, &pitch)
 			DrawLine(renderer)
 		}
 	}
@@ -171,9 +180,9 @@ func DrawLine(renderer *sdl.Renderer) {
 			tileData = 0x8000
 			signed = false
 		}
-		
-		if ((*LcdControl & 0x20) != 0) && (*Ly > *Wy) {      //Bit 5 - Window Display Enable(0=Off, 1=On)
+		if ((*LcdControl & 0x20) != 0) && (*Ly >= *Wy) {      //Bit 5 - Window Display Enable(0=Off, 1=On)
 			//drawing window
+			fmt.Printf("Window Y= %d\n", *Ly)
 			drawWindow = true
 			if (*LcdControl & 0x40) == 0 { //Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
 				tileMap = 0x9800
@@ -198,7 +207,6 @@ func DrawLine(renderer *sdl.Renderer) {
 		var tileLine uint16 = (uint16(currentTile)/8)*32
 		var x uint8
 		var i uint8
-		//var points [160]sdl.Point
 		for i = 0; i < 160; i++ {
 			if drawWindow && (i >= *Wx) { // window
 				x = i - *Wx
@@ -216,14 +224,32 @@ func DrawLine(renderer *sdl.Renderer) {
 			var data0 = ram[tileAddr + l + 0]
 			var data1 = ram[tileAddr + l + 1]
 			var c = getPixelColor(data0, data1, 7-(x%8))
-			renderer.SetDrawColor(c,c,c,255)
-			renderer.DrawPoint(int(i),int(*Ly))
+			pos := ((int(*Ly)*WIDTH)*4) + (int(i)*4)
+			(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 0] = c
+			(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 1] = c
+			(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 2] = c
+			(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 3] = 255
+			/*
+			pixels[pos + 0] = c   //R
+			pixels[pos + 1] = c   //G
+			pixels[pos + 2] = c   //B
+			pixels[pos + 3] = 255 //A
+			*/
 		}
-		renderer.Present()
 	}
 	if (*LcdControl & 0x02) != 0 { //draw sprites
 		//TODO
 	}
+	/*
+	var tmp_p unsafe.Pointer
+	tex.Lock(nil, &tmp_p, &pitch)
+	copy(((*[WIDTH*HEIGHT*4]uint8)(tmp_p))[int(*Ly)*160*4:(int(*Ly)*160*4)+160*4], pixels[int(*Ly)*160*4:(int(*Ly)*160*4)+160*4])
+	tex.Unlock()
+	//
+	tex.Update(nil, p_pixels, PITCH)
+	renderer.Copy(tex,nil,nil)
+	renderer.Present()
+	*/
 }
 
 func getPixelColor(lower, upper, bitNum uint8) uint8{
