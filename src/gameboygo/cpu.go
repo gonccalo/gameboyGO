@@ -1787,7 +1787,20 @@ func jr_nz_xx(b uint8) {
 	CicleCounter += 8
 }
 func rra(b uint8) {
-	fmt.Printf("TODO-RRA: %X\n", b)
+	//fmt.Printf("RRA: %X\n", b)
+	regs.clearFlags(SUBTRACT|HALFCARRY|ZERO)
+	var carry uint8 = 0
+	if regs.getFlag(CARRY) {
+		carry = 0x80
+	}
+	if (regs.a & 0x01) != 0{
+		regs.setFlags(CARRY)
+	} else{
+		regs.clearFlags(CARRY)
+	}
+
+	regs.a = (regs.a >> 1) | carry
+
 	CicleCounter += 4
 }
 func ld_e_xx(b uint8) {
@@ -1868,7 +1881,18 @@ func jr_xx(b uint8) {
 	CicleCounter += 12
 }
 func rla(b uint8) {
-	fmt.Printf("TODO-RLA: %X\n", b)
+	//fmt.Printf("RLA: %X\n", b)
+	regs.clearFlags(SUBTRACT|HALFCARRY|ZERO)
+	var carry uint8 = 0
+	if regs.getFlag(CARRY) {
+		carry = 0x01
+	}
+	if (regs.a & 0x80) != 0{
+		regs.setFlags(CARRY)
+	} else{
+		regs.clearFlags(CARRY)
+	}
+	regs.a = (regs.a << 1) | carry
 	CicleCounter += 4
 }
 func ld_d_xx(b uint8) {
