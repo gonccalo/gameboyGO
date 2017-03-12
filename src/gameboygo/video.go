@@ -140,10 +140,10 @@ func UpdateGPU(renderer *sdl.Renderer, tex *sdl.Texture) {
 
 	if (*Ly == *LyC) {
 		//Bit 2 - Coincidence Flag  (0:LYC<>LY, 1:LYC=LY) (Read Only)
-		*LcdStatus |= 0x04
-		if (*LcdStatus & 0x40) != 0 {
+		if (*LcdStatus & 0x40) != 0 && (*LcdStatus & 0x04) == 0{
 			setInterruptsFlag(LCD_STAT)
 		}
+		*LcdStatus |= 0x04
 	} else{
 		*LcdStatus &= 0xFB
 	}
@@ -180,7 +180,7 @@ func DrawLine(renderer *sdl.Renderer) {
 			tileData = 0x8000
 			signed = false
 		}
-		if ((*LcdControl & 0x20) != 0) && (*Ly >= *Wy) {      //Bit 5 - Window Display Enable(0=Off, 1=On)
+		if ((*LcdControl & 0x20) != 0) && (*Ly > *Wy) {      //Bit 5 - Window Display Enable(0=Off, 1=On)
 			//drawing window
 			fmt.Printf("Window Y= %d\n", *Ly)
 			drawWindow = true

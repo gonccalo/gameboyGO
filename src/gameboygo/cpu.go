@@ -283,7 +283,7 @@ var CicleCounter int
 var ime bool
 var opstats [0x100]uint
 
-//var debug int
+var debug int
 
 func Reset() {
 	CicleCounter = 0
@@ -375,7 +375,7 @@ func ExecuteDebug() {
 func PrintStats() {
 	//var total uint
 	for i := 0; i < len(opstats); i++ {
-		fmt.Printf("OP %X: %d\n", i, opstats[i])
+		//fmt.Printf("OP %X: %d\n", i, opstats[i])
 	}
 }
 
@@ -808,7 +808,9 @@ func call_z_aabb(b uint8) {
 	CicleCounter += 12
 }
 func many_ops(b uint8) {
-	
+	fmt.Printf("TODO: many_ops\n")
+	op := readByte(regs.pc)
+	regs.pc++
 }
 func jp_z_aabb(b uint8) {
 	var dest uint16 = read16bits(regs.pc)
@@ -1711,7 +1713,7 @@ func jr_z_xx(b uint8) {
 	CicleCounter += 8
 }
 func daa(b uint8) {
-	//fmt.Printf("TODO-DAA: %X\n", b)
+	fmt.Printf("TODO-DAA: %X\n", b)
 	CicleCounter += 4
 }
 func ld_h_xx(b uint8) {
@@ -1785,7 +1787,7 @@ func jr_nz_xx(b uint8) {
 	CicleCounter += 8
 }
 func rra(b uint8) {
-	//fmt.Printf("TODO-RRA: %X\n", b)
+	fmt.Printf("TODO-RRA: %X\n", b)
 	CicleCounter += 4
 }
 func ld_e_xx(b uint8) {
@@ -1866,7 +1868,7 @@ func jr_xx(b uint8) {
 	CicleCounter += 12
 }
 func rla(b uint8) {
-	//fmt.Printf("TODO-RLA: %X\n", b)
+	fmt.Printf("TODO-RLA: %X\n", b)
 	CicleCounter += 4
 }
 func ld_d_xx(b uint8) {
@@ -1928,7 +1930,7 @@ func ld_de_aabb(b uint8) {
 	CicleCounter += 12
 }
 func stop(b uint8) {
-	//fmt.Printf("TODO-STOP : %X\n", b)
+	fmt.Printf("TODO-STOP : %X\n", b)
 	regs.pc++
 	CicleCounter += 4
 }
