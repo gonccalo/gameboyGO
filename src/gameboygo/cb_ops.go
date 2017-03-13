@@ -129,6 +129,335 @@ var cb_op = [0x100]operations{
 	bit_7_r,	//0x7D
 	bit_7_r,	//0x7E
 	bit_7_r,	//0x7F
+	res_0_r,	//0x80
+	res_0_r,	//0x81
+	res_0_r,	//0x82
+	res_0_r,	//0x83
+	res_0_r,	//0x84
+	res_0_r,	//0x85
+	res_0_r,	//0x86
+	res_0_r,	//0x87
+	res_1_r,	//0x88
+	res_1_r,	//0x89
+	res_1_r,	//0x8A
+	res_1_r,	//0x8B
+	res_1_r,	//0x8C
+	res_1_r,	//0x8D
+	res_1_r,	//0x8E
+	res_1_r,	//0x8F
+	res_2_r,	//0x90
+	res_2_r,	//0x91
+	res_2_r,	//0x92
+	res_2_r,	//0x93
+	res_2_r,	//0x94
+	res_2_r,	//0x95
+	res_2_r,	//0x96
+	res_2_r,	//0x97
+	res_3_r,	//0x98
+	res_3_r,	//0x99
+	res_3_r,	//0x9A
+	res_3_r,	//0x9B
+	res_3_r,	//0x9C
+	res_3_r,	//0x9D
+	res_3_r,	//0x9E
+	res_3_r,	//0x9F
+	res_4_r,	//0xA0
+	res_4_r,	//0xA1
+	res_4_r,	//0xA2
+	res_4_r,	//0xA3
+	res_4_r,	//0xA4
+	res_4_r,	//0xA5
+	res_4_r,	//0xA6
+	res_4_r,	//0xA7
+	res_5_r,	//0xA8
+	res_5_r,	//0xA9
+	res_5_r,	//0xAA
+	res_5_r,	//0xAB
+	res_5_r,	//0xAC
+	res_5_r,	//0xAD
+	res_5_r,	//0xAE
+	res_5_r,	//0xAF
+	res_6_r,	//0xB0
+	res_6_r,	//0xB1
+	res_6_r,	//0xB2
+	res_6_r,	//0xB3
+	res_6_r,	//0xB4
+	res_6_r,	//0xB5
+	res_6_r,	//0xB6
+	res_6_r,	//0xB7
+	res_7_r,	//0xB8
+	res_7_r,	//0xB9
+	res_7_r,	//0xBA
+	res_7_r,	//0xBB
+	res_7_r,	//0xBC
+	res_7_r,	//0xBD
+	res_7_r,	//0xBE
+	res_7_r,	//0xBF
+	
+}
+func res_7_r(op uint8) {
+	var to_res uint8 = 0x80
+	switch (op & 0x0F){
+	case 0x08:
+		//fmt.Printf("RES 7, B: %X", op)
+		res(to_res, &regs.b)
+	case 0x09:
+		//fmt.Printf("RES 7, C: %X", op)
+		res(to_res, &regs.c)
+	case 0x0A:
+		//fmt.Printf("RES 7, D: %X", op)
+		res(to_res, &regs.d)
+	case 0x0B:
+		//fmt.Printf("RES 7, E: %X", op)
+		res(to_res, &regs.e)
+	case 0x0C:
+		//fmt.Printf("RES 7, H: %X", op)
+		res(to_res, &regs.h)
+	case 0x0D:
+		//fmt.Printf("RES 7, L: %X", op)
+		res(to_res, &regs.l)
+	case 0x0E:
+		//fmt.Printf("RES 7, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		res(to_res, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x0F:
+		//fmt.Printf("RES 7, A: %X", op)
+		res(to_res, &regs.a)
+	}
+	CicleCounter += 8
+}
+func res_6_r(op uint8) {
+	var to_res uint8 = 0x40
+	switch (op & 0x0F){
+	case 0x00:
+		//fmt.Printf("RES 6, B: %X", op)
+		res(to_res, &regs.b)
+	case 0x01:
+		//fmt.Printf("RES 6, C: %X", op)
+		res(to_res, &regs.c)
+	case 0x02:
+		//fmt.Printf("RES 6, D: %X", op)
+		res(to_res, &regs.d)
+	case 0x03:
+		//fmt.Printf("RES 6, E: %X", op)
+		res(to_res, &regs.e)
+	case 0x04:
+		//fmt.Printf("RES 6, H: %X", op)
+		res(to_res, &regs.h)
+	case 0x05:
+		//fmt.Printf("RES 6, L: %X", op)
+		res(to_res, &regs.l)
+	case 0x06:
+		//fmt.Printf("RES 6, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		res(to_res, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x07:
+		//fmt.Printf("RES 6, A: %X", op)
+		res(to_res, &regs.a)
+	}
+	CicleCounter += 8
+}
+func res_5_r(op uint8) {
+	var to_res uint8 = 0x20
+	switch (op & 0x0F){
+	case 0x08:
+		//fmt.Printf("RES 5, B: %X", op)
+		res(to_res, &regs.b)
+	case 0x09:
+		//fmt.Printf("RES 5, C: %X", op)
+		res(to_res, &regs.c)
+	case 0x0A:
+		//fmt.Printf("RES 5, D: %X", op)
+		res(to_res, &regs.d)
+	case 0x0B:
+		//fmt.Printf("RES 5, E: %X", op)
+		res(to_res, &regs.e)
+	case 0x0C:
+		//fmt.Printf("RES 5, H: %X", op)
+		res(to_res, &regs.h)
+	case 0x0D:
+		//fmt.Printf("RES 5, L: %X", op)
+		res(to_res, &regs.l)
+	case 0x0E:
+		//fmt.Printf("RES 5, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		res(to_res, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x0F:
+		//fmt.Printf("RES 5, A: %X", op)
+		res(to_res, &regs.a)
+	}
+	CicleCounter += 8
+}
+func res_4_r(op uint8) {
+	var to_res uint8 = 0x10
+	switch (op & 0x0F){
+	case 0x00:
+		//fmt.Printf("RES 4, B: %X", op)
+		res(to_res, &regs.b)
+	case 0x01:
+		//fmt.Printf("RES 4, C: %X", op)
+		res(to_res, &regs.c)
+	case 0x02:
+		//fmt.Printf("RES 4, D: %X", op)
+		res(to_res, &regs.d)
+	case 0x03:
+		//fmt.Printf("RES 4, E: %X", op)
+		res(to_res, &regs.e)
+	case 0x04:
+		//fmt.Printf("RES 4, H: %X", op)
+		res(to_res, &regs.h)
+	case 0x05:
+		//fmt.Printf("RES 4, L: %X", op)
+		res(to_res, &regs.l)
+	case 0x06:
+		//fmt.Printf("RES 4, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		res(to_res, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x07:
+		//fmt.Printf("RES 4, A: %X", op)
+		res(to_res, &regs.a)
+	}
+	CicleCounter += 8
+}
+func res_3_r(op uint8) {
+	var to_res uint8 = 0x08
+	switch (op & 0x0F){
+	case 0x08:
+		//fmt.Printf("RES 3, B: %X", op)
+		res(to_res, &regs.b)
+	case 0x09:
+		//fmt.Printf("RES 3, C: %X", op)
+		res(to_res, &regs.c)
+	case 0x0A:
+		//fmt.Printf("RES 3, D: %X", op)
+		res(to_res, &regs.d)
+	case 0x0B:
+		//fmt.Printf("RES 3, E: %X", op)
+		res(to_res, &regs.e)
+	case 0x0C:
+		//fmt.Printf("RES 3, H: %X", op)
+		res(to_res, &regs.h)
+	case 0x0D:
+		//fmt.Printf("RES 3, L: %X", op)
+		res(to_res, &regs.l)
+	case 0x0E:
+		//fmt.Printf("RES 3, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		res(to_res, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x0F:
+		//fmt.Printf("RES 3, A: %X", op)
+		res(to_res, &regs.a)
+	}
+	CicleCounter += 8
+}
+func res_2_r(op uint8) {
+	var to_res uint8 = 0x04
+	switch (op & 0x0F){
+	case 0x00:
+		//fmt.Printf("RES 2, B: %X", op)
+		res(to_res, &regs.b)
+	case 0x01:
+		//fmt.Printf("RES 2, C: %X", op)
+		res(to_res, &regs.c)
+	case 0x02:
+		//fmt.Printf("RES 2, D: %X", op)
+		res(to_res, &regs.d)
+	case 0x03:
+		//fmt.Printf("RES 2, E: %X", op)
+		res(to_res, &regs.e)
+	case 0x04:
+		//fmt.Printf("RES 2, H: %X", op)
+		res(to_res, &regs.h)
+	case 0x05:
+		//fmt.Printf("RES 2, L: %X", op)
+		res(to_res, &regs.l)
+	case 0x06:
+		//fmt.Printf("RES 2, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		res(to_res, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x07:
+		//fmt.Printf("RES 2, A: %X", op)
+		res(to_res, &regs.a)
+	}
+	CicleCounter += 8
+}
+func res_1_r(op uint8) {
+	var to_res uint8 = 0x02
+	switch (op & 0x0F){
+	case 0x08:
+		//fmt.Printf("RES 1, B: %X", op)
+		res(to_res, &regs.b)
+	case 0x09:
+		//fmt.Printf("RES 1, C: %X", op)
+		res(to_res, &regs.c)
+	case 0x0A:
+		//fmt.Printf("RES 1, D: %X", op)
+		res(to_res, &regs.d)
+	case 0x0B:
+		//fmt.Printf("RES 1, E: %X", op)
+		res(to_res, &regs.e)
+	case 0x0C:
+		//fmt.Printf("RES 1, H: %X", op)
+		res(to_res, &regs.h)
+	case 0x0D:
+		//fmt.Printf("RES 1, L: %X", op)
+		res(to_res, &regs.l)
+	case 0x0E:
+		//fmt.Printf("RES 1, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		res(to_res, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x0F:
+		//fmt.Printf("RES 1, A: %X", op)
+		res(to_res, &regs.a)
+	}
+	CicleCounter += 8
+}
+func res_0_r(op uint8) {
+	var to_res uint8 = 0x01
+	switch (op & 0x0F){
+	case 0x00:
+		//fmt.Printf("RES 0, B: %X", op)
+		res(to_res, &regs.b)
+	case 0x01:
+		//fmt.Printf("RES 0, C: %X", op)
+		res(to_res, &regs.c)
+	case 0x02:
+		//fmt.Printf("RES 0, D: %X", op)
+		res(to_res, &regs.d)
+	case 0x03:
+		//fmt.Printf("RES 0, E: %X", op)
+		res(to_res, &regs.e)
+	case 0x04:
+		//fmt.Printf("RES 0, H: %X", op)
+		res(to_res, &regs.h)
+	case 0x05:
+		//fmt.Printf("RES 0, L: %X", op)
+		res(to_res, &regs.l)
+	case 0x06:
+		//fmt.Printf("RES 0, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		res(to_res, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x07:
+		//fmt.Printf("RES 0, A: %X", op)
+		res(to_res, &regs.a)
+	}
+	CicleCounter += 8
 }
 func bit_7_r(op uint8) {
 	var to_check uint8 = 0x80
@@ -874,4 +1203,8 @@ func bit(b uint8, r uint8) {
 	}
 	regs.clearFlags(SUBTRACT)
 	regs.setFlags(HALFCARRY)
+}
+
+func res(b uint8, r *uint8) {
+	*r = *r & (^b)
 }

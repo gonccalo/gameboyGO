@@ -810,6 +810,7 @@ func call_z_aabb(b uint8) {
 func many_ops(b uint8) {
 	fmt.Printf("TODO: many_ops\n")
 	op := readByte(regs.pc)
+	fmt.Printf("CB %X\n", op)
 	regs.pc++
 	cb_op[op](op)
 }

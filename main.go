@@ -5,10 +5,12 @@ import (
 	"gameboygo"
 	"time"
 	"os"
+	"flag"
 	//"runtime/pprof"
 	"github.com/veandco/go-sdl2/sdl"
 )
 func main() {
+	romFile := flag.String("rom", "Bc.gb", "Path to rom file") 
 	/*
 	var cpuprofile string = "prof"
 	f, err := os.Create(cpuprofile)
@@ -19,7 +21,7 @@ func main() {
     defer pprof.StopCPUProfile()
 	*/
 	sdl.Init(sdl.INIT_EVERYTHING)
-	window, err := sdl.CreateWindow("test", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
+	window, err := sdl.CreateWindow("gameboyGO", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
         256, 256, sdl.WINDOW_SHOWN)
     if err != nil {
         panic(err)
@@ -36,7 +38,8 @@ func main() {
     	panic(err)
     }
 
-    gameboygo.Load_rom("Bc.gb")
+    flag.Parse()
+    gameboygo.Load_rom(*romFile)
     fmt.Printf("rom: %+v\n", gameboygo.Head)
     gameboygo.Reset()
     renderer.SetDrawColor(0,0,0,255)
