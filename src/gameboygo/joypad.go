@@ -26,7 +26,7 @@ const(
 	KEY_DOWN
 )
 var keys uint8
-func Init() {
+func init() {
 	keys = 0xFF
 }
 func getKeys(sel uint8) uint8{

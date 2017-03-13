@@ -193,7 +193,6 @@ var cb_op = [0x100]operations{
 	res_7_r,	//0xBD
 	res_7_r,	//0xBE
 	res_7_r,	//0xBF
-	
 }
 func res_7_r(op uint8) {
 	var to_res uint8 = 0x80
