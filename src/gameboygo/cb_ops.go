@@ -193,7 +193,337 @@ var cb_op = [0x100]operations{
 	res_7_r,	//0xBD
 	res_7_r,	//0xBE
 	res_7_r,	//0xBF
+	set_0_r,	//0xC0
+	set_0_r,	//0xC1
+	set_0_r,	//0xC2
+	set_0_r,	//0xC3
+	set_0_r,	//0xC4
+	set_0_r,	//0xC5
+	set_0_r,	//0xC6
+	set_0_r,	//0xC7
+	set_1_r,	//0xC8
+	set_1_r,	//0xC9
+	set_1_r,	//0xCA
+	set_1_r,	//0xCB
+	set_1_r,	//0xCC
+	set_1_r,	//0xCD
+	set_1_r,	//0xCE
+	set_1_r,	//0xCF
+	set_2_r,	//0xD0
+	set_2_r,	//0xD1
+	set_2_r,	//0xD2
+	set_2_r,	//0xD3
+	set_2_r,	//0xD4
+	set_2_r,	//0xD5
+	set_2_r,	//0xD6
+	set_2_r,	//0xD7
+	set_3_r,	//0xD8
+	set_3_r,	//0xD9
+	set_3_r,	//0xDA
+	set_3_r,	//0xDB
+	set_3_r,	//0xDC
+	set_3_r,	//0xDD
+	set_3_r,	//0xDE
+	set_3_r,	//0xDF
+	set_4_r,	//0xE0
+	set_4_r,	//0xE1
+	set_4_r,	//0xE2
+	set_4_r,	//0xE3
+	set_4_r,	//0xE4
+	set_4_r,	//0xE5
+	set_4_r,	//0xE6
+	set_4_r,	//0xE7
+	set_5_r,	//0xE8
+	set_5_r,	//0xE9
+	set_5_r,	//0xEA
+	set_5_r,	//0xEB
+	set_5_r,	//0xEC
+	set_5_r,	//0xED
+	set_5_r,	//0xEE
+	set_5_r,	//0xEF
+	set_6_r,	//0xF0
+	set_6_r,	//0xF1
+	set_6_r,	//0xF2
+	set_6_r,	//0xF3
+	set_6_r,	//0xF4
+	set_6_r,	//0xF5
+	set_6_r,	//0xF6
+	set_6_r,	//0xF7
+	set_7_r,	//0xF8
+	set_7_r,	//0xF9
+	set_7_r,	//0xFA
+	set_7_r,	//0xFB
+	set_7_r,	//0xFC
+	set_7_r,	//0xFD
+	set_7_r,	//0xFE
+	set_7_r,	//0xFF
 }
+
+func set_7_r(op uint8) {
+	var to_set uint8 = 0x80
+	switch (op & 0x0F){
+	case 0x08:
+		//fmt.Printf("SET 1, B: %X", op)
+		set(to_set, &regs.b)
+	case 0x09:
+		//fmt.Printf("SET 1, C: %X", op)
+		set(to_set, &regs.c)
+	case 0x0A:
+		//fmt.Printf("SET 1, D: %X", op)
+		set(to_set, &regs.d)
+	case 0x0B:
+		//fmt.Printf("SET 1, E: %X", op)
+		set(to_set, &regs.e)
+	case 0x0C:
+		//fmt.Printf("SET 1, H: %X", op)
+		set(to_set, &regs.h)
+	case 0x0D:
+		//fmt.Printf("SET 1, L: %X", op)
+		set(to_set, &regs.l)
+	case 0x0E:
+		//fmt.Printf("SET 1, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		set(to_set, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x0F:
+		//fmt.Printf("SET 1, A: %X", op)
+		set(to_set, &regs.a)
+	}
+	CicleCounter += 8
+}
+func set_6_r(op uint8) {
+	var to_set uint8 = 0x40
+	switch (op & 0x0F){
+	case 0x00:
+		//fmt.Printf("SET 0, B: %X", op)
+		set(to_set, &regs.b)
+	case 0x01:
+		//fmt.Printf("SET 0, C: %X", op)
+		set(to_set, &regs.c)
+	case 0x02:
+		//fmt.Printf("SET 0, D: %X", op)
+		set(to_set, &regs.d)
+	case 0x03:
+		//fmt.Printf("SET 0, E: %X", op)
+		set(to_set, &regs.e)
+	case 0x04:
+		//fmt.Printf("SET 0, H: %X", op)
+		set(to_set, &regs.h)
+	case 0x05:
+		//fmt.Printf("SET 0, L: %X", op)
+		set(to_set, &regs.l)
+	case 0x06:
+		//fmt.Printf("SET 0, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		set(to_set, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x07:
+		//fmt.Printf("SET 0, A: %X", op)
+		set(to_set, &regs.a)
+	}
+	CicleCounter += 8
+}
+func set_5_r(op uint8) {
+	var to_set uint8 = 0x20
+	switch (op & 0x0F){
+	case 0x08:
+		//fmt.Printf("SET 1, B: %X", op)
+		set(to_set, &regs.b)
+	case 0x09:
+		//fmt.Printf("SET 1, C: %X", op)
+		set(to_set, &regs.c)
+	case 0x0A:
+		//fmt.Printf("SET 1, D: %X", op)
+		set(to_set, &regs.d)
+	case 0x0B:
+		//fmt.Printf("SET 1, E: %X", op)
+		set(to_set, &regs.e)
+	case 0x0C:
+		//fmt.Printf("SET 1, H: %X", op)
+		set(to_set, &regs.h)
+	case 0x0D:
+		//fmt.Printf("SET 1, L: %X", op)
+		set(to_set, &regs.l)
+	case 0x0E:
+		//fmt.Printf("SET 1, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		set(to_set, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x0F:
+		//fmt.Printf("SET 1, A: %X", op)
+		set(to_set, &regs.a)
+	}
+	CicleCounter += 8
+}
+func set_4_r(op uint8) {
+	var to_set uint8 = 0x10
+	switch (op & 0x0F){
+	case 0x00:
+		//fmt.Printf("SET 0, B: %X", op)
+		set(to_set, &regs.b)
+	case 0x01:
+		//fmt.Printf("SET 0, C: %X", op)
+		set(to_set, &regs.c)
+	case 0x02:
+		//fmt.Printf("SET 0, D: %X", op)
+		set(to_set, &regs.d)
+	case 0x03:
+		//fmt.Printf("SET 0, E: %X", op)
+		set(to_set, &regs.e)
+	case 0x04:
+		//fmt.Printf("SET 0, H: %X", op)
+		set(to_set, &regs.h)
+	case 0x05:
+		//fmt.Printf("SET 0, L: %X", op)
+		set(to_set, &regs.l)
+	case 0x06:
+		//fmt.Printf("SET 0, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		set(to_set, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x07:
+		//fmt.Printf("SET 0, A: %X", op)
+		set(to_set, &regs.a)
+	}
+	CicleCounter += 8
+}
+func set_3_r(op uint8) {
+	var to_set uint8 = 0x08
+	switch (op & 0x0F){
+	case 0x08:
+		//fmt.Printf("SET 1, B: %X", op)
+		set(to_set, &regs.b)
+	case 0x09:
+		//fmt.Printf("SET 1, C: %X", op)
+		set(to_set, &regs.c)
+	case 0x0A:
+		//fmt.Printf("SET 1, D: %X", op)
+		set(to_set, &regs.d)
+	case 0x0B:
+		//fmt.Printf("SET 1, E: %X", op)
+		set(to_set, &regs.e)
+	case 0x0C:
+		//fmt.Printf("SET 1, H: %X", op)
+		set(to_set, &regs.h)
+	case 0x0D:
+		//fmt.Printf("SET 1, L: %X", op)
+		set(to_set, &regs.l)
+	case 0x0E:
+		//fmt.Printf("SET 1, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		set(to_set, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x0F:
+		//fmt.Printf("SET 1, A: %X", op)
+		set(to_set, &regs.a)
+	}
+	CicleCounter += 8
+}
+func set_2_r(op uint8) {
+	var to_set uint8 = 0x04
+	switch (op & 0x0F){
+	case 0x00:
+		//fmt.Printf("SET 0, B: %X", op)
+		set(to_set, &regs.b)
+	case 0x01:
+		//fmt.Printf("SET 0, C: %X", op)
+		set(to_set, &regs.c)
+	case 0x02:
+		//fmt.Printf("SET 0, D: %X", op)
+		set(to_set, &regs.d)
+	case 0x03:
+		//fmt.Printf("SET 0, E: %X", op)
+		set(to_set, &regs.e)
+	case 0x04:
+		//fmt.Printf("SET 0, H: %X", op)
+		set(to_set, &regs.h)
+	case 0x05:
+		//fmt.Printf("SET 0, L: %X", op)
+		set(to_set, &regs.l)
+	case 0x06:
+		//fmt.Printf("SET 0, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		set(to_set, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x07:
+		//fmt.Printf("SET 0, A: %X", op)
+		set(to_set, &regs.a)
+	}
+	CicleCounter += 8
+}
+func set_1_r(op uint8) {
+	var to_set uint8 = 0x02
+	switch (op & 0x0F){
+	case 0x08:
+		//fmt.Printf("SET 1, B: %X", op)
+		set(to_set, &regs.b)
+	case 0x09:
+		//fmt.Printf("SET 1, C: %X", op)
+		set(to_set, &regs.c)
+	case 0x0A:
+		//fmt.Printf("SET 1, D: %X", op)
+		set(to_set, &regs.d)
+	case 0x0B:
+		//fmt.Printf("SET 1, E: %X", op)
+		set(to_set, &regs.e)
+	case 0x0C:
+		//fmt.Printf("SET 1, H: %X", op)
+		set(to_set, &regs.h)
+	case 0x0D:
+		//fmt.Printf("SET 1, L: %X", op)
+		set(to_set, &regs.l)
+	case 0x0E:
+		//fmt.Printf("SET 1, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		set(to_set, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x0F:
+		//fmt.Printf("SET 1, A: %X", op)
+		set(to_set, &regs.a)
+	}
+	CicleCounter += 8
+}
+func set_0_r(op uint8) {
+	var to_set uint8 = 0x01
+	switch (op & 0x0F){
+	case 0x00:
+		//fmt.Printf("SET 0, B: %X", op)
+		set(to_set, &regs.b)
+	case 0x01:
+		//fmt.Printf("SET 0, C: %X", op)
+		set(to_set, &regs.c)
+	case 0x02:
+		//fmt.Printf("SET 0, D: %X", op)
+		set(to_set, &regs.d)
+	case 0x03:
+		//fmt.Printf("SET 0, E: %X", op)
+		set(to_set, &regs.e)
+	case 0x04:
+		//fmt.Printf("SET 0, H: %X", op)
+		set(to_set, &regs.h)
+	case 0x05:
+		//fmt.Printf("SET 0, L: %X", op)
+		set(to_set, &regs.l)
+	case 0x06:
+		//fmt.Printf("SET 0, (HL): %X", op)
+		var r uint8 = readByte(regs.hl_read())
+		set(to_set, &r)
+		writeByte(regs.hl_read(), r)
+		CicleCounter += 8
+	case 0x07:
+		//fmt.Printf("SET 0, A: %X", op)
+		set(to_set, &regs.a)
+	}
+	CicleCounter += 8
+}
+
 func res_7_r(op uint8) {
 	var to_res uint8 = 0x80
 	switch (op & 0x0F){
@@ -458,6 +788,7 @@ func res_0_r(op uint8) {
 	}
 	CicleCounter += 8
 }
+
 func bit_7_r(op uint8) {
 	var to_check uint8 = 0x80
 	switch (op & 0x0F){
@@ -1206,4 +1537,8 @@ func bit(b uint8, r uint8) {
 
 func res(b uint8, r *uint8) {
 	*r = *r & (^b)
+}
+
+func set(b uint8, r *uint8) {
+	*r = *r | b
 }
