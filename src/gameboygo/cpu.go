@@ -811,6 +811,7 @@ func many_ops(b uint8) {
 	fmt.Printf("TODO: many_ops\n")
 	op := readByte(regs.pc)
 	regs.pc++
+	cb_op[op](op)
 }
 func jp_z_aabb(b uint8) {
 	var dest uint16 = read16bits(regs.pc)
@@ -1714,6 +1715,13 @@ func jr_z_xx(b uint8) {
 }
 func daa(b uint8) {
 	fmt.Printf("TODO-DAA: %X\n", b)
+	regs.clearFlags(HALFCARRY)
+
+	if regs.a != 0 {
+		regs.clearFlags(ZERO)
+	} else{
+		regs.setFlags(ZERO)
+	}
 	CicleCounter += 4
 }
 func ld_h_xx(b uint8) {

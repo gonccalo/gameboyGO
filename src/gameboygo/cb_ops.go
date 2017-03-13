@@ -49,8 +49,422 @@ var cb_op = [0x100]operations{
 	sra_l,		//0x2D
 	sra_hl,		//0x2E
 	sra_a,		//0x2F
-
+	swap_b,		//0x30
+	swap_c,		//0x31
+	swap_d,		//0x32
+	swap_e,		//0x33
+	swap_h,		//0x34
+	swap_l,		//0x35
+	swap_hl,	//0x36
+	swap_a,		//0x37
+	srl_b,		//0x38
+	srl_c,		//0x39
+	srl_d,		//0x3A
+	srl_e,		//0x3B
+	srl_h,		//0x3C
+	srl_l,		//0x3D
+	srl_hl,		//0x3E
+	srl_a,		//0x3F
+	bit_0_r,	//0x40
+	bit_0_r,	//0x41
+	bit_0_r,	//0x42
+	bit_0_r,	//0x43
+	bit_0_r,	//0x44
+	bit_0_r,	//0x45
+	bit_0_r,	//0x46
+	bit_0_r,	//0x47
+	bit_1_r,	//0x48
+	bit_1_r,	//0x49
+	bit_1_r,	//0x4A
+	bit_1_r,	//0x4B
+	bit_1_r,	//0x4C
+	bit_1_r,	//0x4D
+	bit_1_r,	//0x4E
+	bit_1_r,	//0x4F
+	bit_2_r,	//0x50
+	bit_2_r,	//0x51
+	bit_2_r,	//0x52
+	bit_2_r,	//0x53
+	bit_2_r,	//0x54
+	bit_2_r,	//0x55
+	bit_2_r,	//0x56
+	bit_2_r,	//0x57
+	bit_3_r,	//0x58
+	bit_3_r,	//0x59
+	bit_3_r,	//0x5A
+	bit_3_r,	//0x5B
+	bit_3_r,	//0x5C
+	bit_3_r,	//0x5D
+	bit_3_r,	//0x5E
+	bit_3_r,	//0x5F
+	bit_4_r,	//0x60
+	bit_4_r,	//0x61
+	bit_4_r,	//0x62
+	bit_4_r,	//0x63
+	bit_4_r,	//0x64
+	bit_4_r,	//0x65
+	bit_4_r,	//0x66
+	bit_4_r,	//0x67
+	bit_5_r,	//0x68
+	bit_5_r,	//0x69
+	bit_5_r,	//0x6A
+	bit_5_r,	//0x6B
+	bit_5_r,	//0x6C
+	bit_5_r,	//0x6D
+	bit_5_r,	//0x6E
+	bit_5_r,	//0x6F
+	bit_6_r,	//0x70
+	bit_6_r,	//0x71
+	bit_6_r,	//0x72
+	bit_6_r,	//0x73
+	bit_6_r,	//0x74
+	bit_6_r,	//0x75
+	bit_6_r,	//0x76
+	bit_6_r,	//0x77
+	bit_7_r,	//0x78
+	bit_7_r,	//0x79
+	bit_7_r,	//0x7A
+	bit_7_r,	//0x7B
+	bit_7_r,	//0x7C
+	bit_7_r,	//0x7D
+	bit_7_r,	//0x7E
+	bit_7_r,	//0x7F
 }
+func bit_7_r(op uint8) {
+	var to_check uint8 = 0x80
+	switch (op & 0x0F){
+	case 0x08:
+		//fmt.Printf("BIT 7, B: %X", op)
+		bit(to_check, regs.b)
+	case 0x09:
+		//fmt.Printf("BIT 7, C: %X", op)
+		bit(to_check, regs.c)
+	case 0x0A:
+		//fmt.Printf("BIT 7, D: %X", op)
+		bit(to_check, regs.d)
+	case 0x0B:
+		//fmt.Printf("BIT 7, E: %X", op)
+		bit(to_check, regs.e)
+	case 0x0C:
+		//fmt.Printf("BIT 7, H: %X", op)
+		bit(to_check, regs.h)
+	case 0x0D:
+		//fmt.Printf("BIT 7, L: %X", op)
+		bit(to_check, regs.l)
+	case 0x0E:
+		//fmt.Printf("BIT 7, HL: %X", op)
+		bit(to_check, readByte(regs.hl_read()))
+		CicleCounter += 8
+	case 0x0F:
+		//fmt.Printf("BIT 7, A: %X", op)
+		bit(to_check, regs.a)
+	}
+	CicleCounter += 8
+}
+func bit_6_r(op uint8) {
+	var to_check uint8 = 0x40
+	switch (op & 0x0F){
+	case 0x00:
+		//fmt.Printf("BIT 6, B: %X", op)
+		bit(to_check, regs.b)
+	case 0x01:
+		//fmt.Printf("BIT 6, C: %X", op)
+		bit(to_check, regs.c)
+	case 0x02:
+		//fmt.Printf("BIT 6, D: %X", op)
+		bit(to_check, regs.d)
+	case 0x03:
+		//fmt.Printf("BIT 6, E: %X", op)
+		bit(to_check, regs.e)
+	case 0x04:
+		//fmt.Printf("BIT 6, H: %X", op)
+		bit(to_check, regs.h)
+	case 0x05:
+		//fmt.Printf("BIT 6, L: %X", op)
+		bit(to_check, regs.l)
+	case 0x06:
+		//fmt.Printf("BIT 6, HL: %X", op)
+		bit(to_check, readByte(regs.hl_read()))
+		CicleCounter += 8
+	case 0x07:
+		//fmt.Printf("BIT 6, A: %X", op)
+		bit(to_check, regs.a)
+	}
+	CicleCounter += 8
+}
+func bit_5_r(op uint8) {
+	var to_check uint8 = 0x20
+	switch (op & 0x0F){
+	case 0x08:
+		//fmt.Printf("BIT 5, B: %X", op)
+		bit(to_check, regs.b)
+	case 0x09:
+		//fmt.Printf("BIT 5, C: %X", op)
+		bit(to_check, regs.c)
+	case 0x0A:
+		//fmt.Printf("BIT 5, D: %X", op)
+		bit(to_check, regs.d)
+	case 0x0B:
+		//fmt.Printf("BIT 5, E: %X", op)
+		bit(to_check, regs.e)
+	case 0x0C:
+		//fmt.Printf("BIT 5, H: %X", op)
+		bit(to_check, regs.h)
+	case 0x0D:
+		//fmt.Printf("BIT 5, L: %X", op)
+		bit(to_check, regs.l)
+	case 0x0E:
+		//fmt.Printf("BIT 5, HL: %X", op)
+		bit(to_check, readByte(regs.hl_read()))
+		CicleCounter += 8
+	case 0x0F:
+		//fmt.Printf("BIT 5, A: %X", op)
+		bit(to_check, regs.a)
+	}
+	CicleCounter += 8
+}
+func bit_4_r(op uint8) {
+	var to_check uint8 = 0x10
+	switch (op & 0x0F){
+	case 0x00:
+		//fmt.Printf("BIT 4, B: %X", op)
+		bit(to_check, regs.b)
+	case 0x01:
+		//fmt.Printf("BIT 4, C: %X", op)
+		bit(to_check, regs.c)
+	case 0x02:
+		//fmt.Printf("BIT 4, D: %X", op)
+		bit(to_check, regs.d)
+	case 0x03:
+		//fmt.Printf("BIT 4, E: %X", op)
+		bit(to_check, regs.e)
+	case 0x04:
+		//fmt.Printf("BIT 4, H: %X", op)
+		bit(to_check, regs.h)
+	case 0x05:
+		//fmt.Printf("BIT 4, L: %X", op)
+		bit(to_check, regs.l)
+	case 0x06:
+		//fmt.Printf("BIT 4, HL: %X", op)
+		bit(to_check, readByte(regs.hl_read()))
+		CicleCounter += 8
+	case 0x07:
+		//fmt.Printf("BIT 4, A: %X", op)
+		bit(to_check, regs.a)
+	}
+	CicleCounter += 8
+}
+func bit_3_r(op uint8) {
+	var to_check uint8 = 0x08
+	switch (op & 0x0F){
+	case 0x08:
+		//fmt.Printf("BIT 3, B: %X", op)
+		bit(to_check, regs.b)
+	case 0x09:
+		//fmt.Printf("BIT 3, C: %X", op)
+		bit(to_check, regs.c)
+	case 0x0A:
+		//fmt.Printf("BIT 3, D: %X", op)
+		bit(to_check, regs.d)
+	case 0x0B:
+		//fmt.Printf("BIT 3, E: %X", op)
+		bit(to_check, regs.e)
+	case 0x0C:
+		//fmt.Printf("BIT 3, H: %X", op)
+		bit(to_check, regs.h)
+	case 0x0D:
+		//fmt.Printf("BIT 3, L: %X", op)
+		bit(to_check, regs.l)
+	case 0x0E:
+		//fmt.Printf("BIT 3, HL: %X", op)
+		bit(to_check, readByte(regs.hl_read()))
+		CicleCounter += 8
+	case 0x0F:
+		//fmt.Printf("BIT 3, A: %X", op)
+		bit(to_check, regs.a)
+	}
+	CicleCounter += 8
+}
+func bit_2_r(op uint8) {
+	var to_check uint8 = 0x04
+	switch (op & 0x0F){
+	case 0x00:
+		//fmt.Printf("BIT 2, B: %X", op)
+		bit(to_check, regs.b)
+	case 0x01:
+		//fmt.Printf("BIT 2, C: %X", op)
+		bit(to_check, regs.c)
+	case 0x02:
+		//fmt.Printf("BIT 2, D: %X", op)
+		bit(to_check, regs.d)
+	case 0x03:
+		//fmt.Printf("BIT 2, E: %X", op)
+		bit(to_check, regs.e)
+	case 0x04:
+		//fmt.Printf("BIT 2, H: %X", op)
+		bit(to_check, regs.h)
+	case 0x05:
+		//fmt.Printf("BIT 2, L: %X", op)
+		bit(to_check, regs.l)
+	case 0x06:
+		//fmt.Printf("BIT 2, HL: %X", op)
+		bit(to_check, readByte(regs.hl_read()))
+		CicleCounter += 8
+	case 0x07:
+		//fmt.Printf("BIT 2, A: %X", op)
+		bit(to_check, regs.a)
+	}
+	CicleCounter += 8
+}
+func bit_1_r(op uint8) {
+	var to_check uint8 = 0x02
+	switch (op & 0x0F){
+	case 0x08:
+		//fmt.Printf("BIT 1, B: %X", op)
+		bit(to_check, regs.b)
+	case 0x09:
+		//fmt.Printf("BIT 1, C: %X", op)
+		bit(to_check, regs.c)
+	case 0x0A:
+		//fmt.Printf("BIT 1, D: %X", op)
+		bit(to_check, regs.d)
+	case 0x0B:
+		//fmt.Printf("BIT 1, E: %X", op)
+		bit(to_check, regs.e)
+	case 0x0C:
+		//fmt.Printf("BIT 1, H: %X", op)
+		bit(to_check, regs.h)
+	case 0x0D:
+		//fmt.Printf("BIT 1, L: %X", op)
+		bit(to_check, regs.l)
+	case 0x0E:
+		//fmt.Printf("BIT 1, HL: %X", op)
+		bit(to_check, readByte(regs.hl_read()))
+		CicleCounter += 8
+	case 0x0F:
+		//fmt.Printf("BIT 1, A: %X", op)
+		bit(to_check, regs.a)
+	}
+	CicleCounter += 8
+}
+func bit_0_r(op uint8) {
+	var to_check uint8 = 0x01
+	switch (op & 0x0F){
+	case 0x00:
+		//fmt.Printf("BIT 0, B: %X", op)
+		bit(to_check, regs.b)
+	case 0x01:
+		//fmt.Printf("BIT 0, C: %X", op)
+		bit(to_check, regs.c)
+	case 0x02:
+		//fmt.Printf("BIT 0, D: %X", op)
+		bit(to_check, regs.d)
+	case 0x03:
+		//fmt.Printf("BIT 0, E: %X", op)
+		bit(to_check, regs.e)
+	case 0x04:
+		//fmt.Printf("BIT 0, H: %X", op)
+		bit(to_check, regs.h)
+	case 0x05:
+		//fmt.Printf("BIT 0, L: %X", op)
+		bit(to_check, regs.l)
+	case 0x06:
+		//fmt.Printf("BIT 0, HL: %X", op)
+		bit(to_check, readByte(regs.hl_read()))
+		CicleCounter += 8
+	case 0x07:
+		//fmt.Printf("BIT 0, A: %X", op)
+		bit(to_check, regs.a)
+	}
+	CicleCounter += 8
+}
+
+func srl_a(op uint8) {
+	//fmt.Printf("SRL A: %X", op)
+	srl(&regs.a)
+	CicleCounter += 8
+}
+func srl_hl(op uint8) {
+	//fmt.Printf("SRL HL: %X", op)
+	var r uint8 = readByte(regs.hl_read())
+	srl(&r)
+	writeByte(regs.hl_read(), r)
+	CicleCounter += 8
+}
+func srl_l(op uint8) {
+	//fmt.Printf("SRL L: %X", op)
+	srl(&regs.l)
+	CicleCounter += 8
+}
+func srl_h(op uint8) {
+	//fmt.Printf("SRL H: %X", op)
+	srl(&regs.h)
+	CicleCounter += 8
+}
+func srl_e(op uint8) {
+	//fmt.Printf("SRL E: %X", op)
+	srl(&regs.e)
+	CicleCounter += 8
+}
+func srl_d(op uint8) {
+	//fmt.Printf("SRL D: %X", op)
+	srl(&regs.d)
+	CicleCounter += 8
+}
+func srl_c(op uint8) {
+	//fmt.Printf("SRL C: %X", op)
+	srl(&regs.c)
+	CicleCounter += 8
+}
+func srl_b(op uint8) {
+	//fmt.Printf("SRL B: %X", op)
+	srl(&regs.b)
+	CicleCounter += 8
+}
+
+func swap_a(op uint8) {
+	//fmt.Printf("SWAP A: %X", op)
+	swap(&regs.a)
+	CicleCounter += 8
+}
+func swap_hl(op uint8) {
+	//fmt.Printf("SWAP (HL): %X", op)
+	var r uint8 = readByte(regs.hl_read())
+	swap(&r)
+	writeByte(regs.hl_read(), r)
+	CicleCounter += 16
+}
+func swap_l(op uint8) {
+	//fmt.Printf("SWAP L: %X", op)
+	swap(&regs.l)
+	CicleCounter += 8
+}
+func swap_h(op uint8) {
+	//fmt.Printf("SWAP H: %X", op)
+	swap(&regs.h)
+	CicleCounter += 8
+}
+func swap_e(op uint8) {
+	//fmt.Printf("SWAP E: %X", op)
+	swap(&regs.e)
+	CicleCounter += 8
+}
+func swap_d(op uint8) {
+	//fmt.Printf("SWAP D: %X", op)
+	swap(&regs.d)
+	CicleCounter += 8
+}
+func swap_c(op uint8) {
+	//fmt.Printf("SWAP C: %X", op)
+	swap(&regs.c)
+	CicleCounter += 8
+}
+func swap_b(op uint8) {
+	//fmt.Printf("SWAP B: %X", op)
+	swap(&regs.b)
+	CicleCounter += 8
+}
+
 func sra_a(op uint8) {
 	//fmt.Printf("SRA A: %X", op)
 	sra(&regs.a)
@@ -421,4 +835,43 @@ func sra(r *uint8) {
 	} else{
 		regs.clearFlags(ZERO)
 	}
+}
+
+func swap(r *uint8) {
+	regs.clearFlags(SUBTRACT|HALFCARRY|CARRY)
+
+	*r = ((*r & 0x0F) << 4) | ((*r & 0xF0) >> 4) 
+
+	if *r == 0 {
+		regs.setFlags(ZERO)
+	} else{
+		regs.clearFlags(ZERO)
+	}
+}
+
+func srl(r *uint8) {
+	regs.clearFlags(SUBTRACT|HALFCARRY)
+	if (*r & 0x01) != 0 {
+		regs.setFlags(CARRY)
+	} else{
+		regs.clearFlags(CARRY)
+	}
+
+	*r = *r >> 1
+
+	if *r == 0 {
+		regs.setFlags(ZERO)
+	} else{
+		regs.clearFlags(ZERO)
+	}
+}
+
+func bit(b uint8, r uint8) {
+	if (r & b) == 0 {
+		regs.setFlags(ZERO)
+	} else{
+		regs.clearFlags(ZERO)
+	}
+	regs.clearFlags(SUBTRACT)
+	regs.setFlags(HALFCARRY)
 }
