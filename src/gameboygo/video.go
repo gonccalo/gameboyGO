@@ -25,7 +25,6 @@ var colors = [4]uint8 {WHITE,		//00
 					   LIGHT_GRAY,	//01
 					   DARK_GRAY,	//10
 					   BLACK,}		//11
-
 //var pixels [BUFFER_SIZE]uint8
 //var p_pixels unsafe.Pointer = unsafe.Pointer(&pixels)
 var pitch int = PITCH
@@ -182,7 +181,6 @@ func DrawLine(renderer *sdl.Renderer) {
 		}
 		if ((*LcdControl & 0x20) != 0) && (*Ly > *Wy) {      //Bit 5 - Window Display Enable(0=Off, 1=On)
 			//drawing window
-			fmt.Printf("Window Y= %d\n", *Ly)
 			drawWindow = true
 			if (*LcdControl & 0x40) == 0 { //Bit 6 - Window Tile Map Display Select (0=9800-9BFF, 1=9C00-9FFF)
 				tileMap = 0x9800
@@ -208,8 +206,8 @@ func DrawLine(renderer *sdl.Renderer) {
 		var x uint8
 		var i uint8
 		for i = 0; i < 160; i++ {
-			if drawWindow && (i >= *Wx) { // window
-				x = i - *Wx
+			if drawWindow && (i >= (*Wx-7)) { // window
+				x = i - (*Wx-7)
 			} else{
 				x = i + *ScX
 			}
@@ -223,7 +221,7 @@ func DrawLine(renderer *sdl.Renderer) {
 			var l uint16 = (uint16(currentTile) % 8) * 2 //line of the tile that we are drawing: each tile has 8 lines and each line is 2 bytes
 			var data0 = ram[tileAddr + l + 0]
 			var data1 = ram[tileAddr + l + 1]
-			var c = getPixelColor(data0, data1, 7-(x%8))
+			var c = getPixelColor(data0, data1, 7-(x%8), *Bgp)
 			pos := ((int(*Ly)*WIDTH)*4) + (int(i)*4)
 			(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 0] = c
 			(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 1] = c
@@ -238,30 +236,77 @@ func DrawLine(renderer *sdl.Renderer) {
 		}
 	}
 	if (*LcdControl & 0x02) != 0 { //draw sprites
-		//TODO
+		var sy uint8 = 8 + ((*LcdControl & 0x04) << 1)
+		/*
+		if (*LcdControl & 0x04) == 0{
+			//Bit 2 - OBJ (Sprite) Size(0=8x8, 1=8x16)
+			sy = 16
+		}
+		*/
+		/*
+		Byte0  Y position on the screen
+  		Byte1  X position on the screen
+  		Byte2  Pattern number 0-255 (Unlike some tile
+         numbers, sprite pattern numbers are unsigned.
+         LSB is ignored (treated as 0) in 8x16 mode.)
+  		Byte3  Flags
+		*/
+		var i uint16
+		for i = 0; i < 40; i++ { //all 40 sprites at 0xFE00 (4 bytes per sprite)
+			var spriteY     uint8 = ram[0xFE00 + (i*4) + 0] - 16
+			var spriteX     uint8 = ram[0xFE00 + (i*4) + 1] -  8
+			var spriteNum   uint8 = ram[0xFE00 + (i*4) + 2] //LSB = 0 when 8x16
+			var spriteFlags uint8 = ram[0xFE00 + (i*4) + 3]
+
+			if !((*Ly >= spriteY) && (*Ly < (spriteY+sy))) {
+				//sprite not in current scanline
+				continue
+			}
+			var line uint8 = *Ly - spriteY
+			if (spriteFlags & 0x40) != 0 {
+				//yFlip: read from bottom
+				line = (^line) & 0x07
+			}
+
+			//palette --> (0=OBP0(0xFF48), 1=OBP1(0xFF49))
+			var palette uint8 = ram[0xFF48 + ((uint16(spriteFlags) & 0x10) >> 4) ]
+
+			var spriteDataAddr uint16 = 0x8000 + (uint16(spriteNum) * 16) + (uint16(line)*2)
+			var data0 = ram[spriteDataAddr + 0]
+			var data1 = ram[spriteDataAddr + 1]
+			var Xpixel uint8
+			for Xpixel = 7; Xpixel != 255 ; Xpixel-- {
+				//draw all pixels from this line
+				var bit uint8 = Xpixel
+				if (spriteFlags & 0x20) != 0 {
+					//X flip (0=Normal, 1=Horizontally mirrored)
+					bit = (^Xpixel) & 0x07
+				}
+				color := getPixelColor(data0, data1, bit, palette)
+				if color == WHITE{
+					//the white color in sprites is transparent
+					continue
+				}
+				pos :=  (int(*Ly)*WIDTH*4) + (int(spriteX) + int((^Xpixel)&0x07)) * 4
+				(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 0] = color
+				(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 1] = color
+				(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 2] = color
+				(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 3] = 255
+			}
+		}
 	}
-	/*
-	var tmp_p unsafe.Pointer
-	tex.Lock(nil, &tmp_p, &pitch)
-	copy(((*[WIDTH*HEIGHT*4]uint8)(tmp_p))[int(*Ly)*160*4:(int(*Ly)*160*4)+160*4], pixels[int(*Ly)*160*4:(int(*Ly)*160*4)+160*4])
-	tex.Unlock()
-	//
-	tex.Update(nil, p_pixels, PITCH)
-	renderer.Copy(tex,nil,nil)
-	renderer.Present()
-	*/
 }
 
-func getPixelColor(lower, upper, bitNum uint8) uint8{
+func getPixelColor(lower, upper, bitNum uint8, palette uint8) uint8{
 	var mask uint8 = (1 << bitNum)
 	if bitNum < 2 {
-		return getColor(((upper & mask) << (1-bitNum)) | ((lower & mask) >> bitNum))
+		return getColor(((upper & mask) << (1-bitNum)) | ((lower & mask) >> bitNum), palette)
 	}
-	return getColor((upper & mask) >> (bitNum - 1) | ((lower & mask) >> bitNum))
+	return getColor((upper & mask) >> (bitNum - 1) | ((lower & mask) >> bitNum), palette)
 }
 
-func getColor(code uint8) uint8{
-	return colors[((*Bgp & (0x03 << (2*code))) >> (2*code))]
+func getColor(code uint8, palette uint8) uint8{
+	return colors[((palette & (0x03 << (2*code))) >> (2*code))]
 }
 
 func setLcdStatMode(mode uint8) {
