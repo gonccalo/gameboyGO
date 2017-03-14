@@ -279,11 +279,12 @@ var ops = [0x100]operations{
 var regs registers
 var halted bool
 var LastTimer int
+var LastDivTimer int
 var CicleCounter int
 var ime bool
-var opstats [0x100]uint
 
-var debug int
+
+//var debug int
 
 func Reset() {
 	CicleCounter = 0
@@ -334,10 +335,7 @@ func Reset() {
 }
 
 func Execute() {
-	if tfreq := getTimerFreq(); (tfreq != 0) && ((int(CicleCounter/tfreq) - LastTimer) >= 1) {
-		LastTimer = int(CicleCounter/tfreq)
-		incTimer()
-	}
+	incTimer()
 	InterruptExec()
 	op := readByte(regs.pc)
 	regs.pc++
@@ -372,13 +370,6 @@ func ExecuteDebug() {
 	}
 }
 */
-func PrintStats() {
-	//var total uint
-	for i := 0; i < len(opstats); i++ {
-		//fmt.Printf("OP %X: %d\n", i, opstats[i])
-	}
-}
-
 func rst_38(b uint8) {
 	//fmt.Printf("RST 38: %X\n", b)
 	regs.sp -= 2

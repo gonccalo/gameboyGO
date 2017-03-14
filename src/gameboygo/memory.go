@@ -3,12 +3,6 @@ package gameboygo
 var ram [0x10000]uint8
 var Rom1 		= ram[0x0000:0x4000]
 var RomN 		= ram[0x4000:0x8000]
-var CartRam 	= ram[0xA000:0xC000]
-var Wram 		= ram[0xC000:0xE000]
-var Oram 		= ram[0xFE00:0xFEA0]
-var Io 			= ram[0xFF00:0xFF80]
-var Hram 		= ram[0xFF80:0xFFFF]
-
 
 func writeByte(addr uint16, b uint8) bool{
 	if addr >= 0xE000 && addr < 0xFE00 {	//echo zone
@@ -65,10 +59,17 @@ func getTimerFreq() int{ //0 if clock is stoped or frequency if started
 	}
 }
 func incTimer() {
-	ram[0xFF05]++
-	if ram[0xFF05] == 0 {
-		setInterruptsFlag(TIMER)
-		ram[0xFF05] = ram[0xFF06]
-		//fmt.Println("TIMER INTERRUPT")
+	if tfreq := getTimerFreq(); (tfreq != 0) && ((int(CicleCounter/tfreq) - LastTimer) >= 1) {
+		LastTimer = int(CicleCounter/tfreq)
+		ram[0xFF05]++
+		if ram[0xFF05] == 0 {
+			setInterruptsFlag(TIMER)
+			ram[0xFF05] = ram[0xFF06]
+			//fmt.Println("TIMER INTERRUPT")
+		}
+	}
+	if int(CicleCounter/(CPU_FREQ/16384)) - LastDivTimer >= 1 {
+		LastDivTimer = int(CicleCounter/(CPU_FREQ/16384))
+		ram[0xFF04]++
 	}
 }

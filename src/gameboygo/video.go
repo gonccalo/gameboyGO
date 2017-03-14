@@ -2,7 +2,7 @@ package gameboygo
 
 import "github.com/veandco/go-sdl2/sdl"
 import "unsafe"
-import "fmt"
+//import "fmt"
 const(
 	WHITE		uint8 = 255
 	LIGHT_GRAY	uint8 = 170
@@ -25,8 +25,7 @@ var colors = [4]uint8 {WHITE,		//00
 					   LIGHT_GRAY,	//01
 					   DARK_GRAY,	//10
 					   BLACK,}		//11
-//var pixels [BUFFER_SIZE]uint8
-//var p_pixels unsafe.Pointer = unsafe.Pointer(&pixels)
+
 var pitch int = PITCH
 var p_pixels unsafe.Pointer
 /*
@@ -89,14 +88,12 @@ This register assigns gray shades to the color numbers of the BG and Window tile
 var Bgp = &ram[0xFF47]
 
 /*
+ram[0xFF48]
 This register assigns gray shades for sprite palette 0. It works exactly as BGP (FF47), except that the lower two bits aren't used because sprite data 00 is transparent.
-*/
-var Obp0 = &ram[0xFF48]
 
-/*
+ram[0xFF49]
 This register assigns gray shades for sprite palette 1. It works exactly as BGP (FF47), except that the lower two bits aren't used because sprite data 00 is transparent.
 */
-var Obp1 = &ram[0xFF49]
 
 var LastScanLine int = 0
 func UpdateGPU(renderer *sdl.Renderer, tex *sdl.Texture) {
