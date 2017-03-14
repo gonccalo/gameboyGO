@@ -23,7 +23,7 @@ Gameboy emulator in go
 export GOPATH=/full/path/to/gameboyGO/
 export GODEBUG=cgocheck=0
 go build
-./gameboyGO
+./gameboyGO -rom <file>
 ```
 
 ## Dependencies
