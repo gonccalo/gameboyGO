@@ -13,7 +13,6 @@ Gameboy emulator in go
 
 ## TODO:
 * STOP, HALT and DAA instructions
-* Divider register (0xFF04)
 * Support roms bigger than 32K
 * Sound
 

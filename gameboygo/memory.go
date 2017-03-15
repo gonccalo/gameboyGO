@@ -1,4 +1,4 @@
-package gameboygo
+package main
 //import "fmt"
 var ram [0x10000]uint8
 var Rom1 		= ram[0x0000:0x4000]

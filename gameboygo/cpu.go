@@ -1,4 +1,4 @@
-package gameboygo
+package main
 
 import (
 	"fmt"
@@ -1706,14 +1706,33 @@ func jr_z_xx(b uint8) {
 	CicleCounter += 8
 }
 func daa(b uint8) {
-	fmt.Printf("TODO-DAA: %X\n", b)
-	regs.clearFlags(HALFCARRY)
-
+	fmt.Printf("DAA: %X\n", b)
+	var tmp uint16 = uint16(regs.a)
+	if regs.getFlag(SUBTRACT) {
+		if regs.getFlag(HALFCARRY) {
+			tmp = (tmp-0x06) & 0xFF
+		}
+		if regs.getFlag(CARRY) {
+			tmp = tmp - 0x60
+		}
+	} else{
+		if regs.getFlag(HALFCARRY) || ((tmp & 0x0F) > 9) {
+			tmp = tmp + 0x06
+		}
+		if regs.getFlag(CARRY) || tmp > 0x9F{
+			tmp = tmp + 0x60
+		}
+	}
+	if tmp >= 0x100 {
+		regs.setFlags(CARRY)
+	}
+	regs.a = uint8(tmp & 0xFF)
 	if regs.a != 0 {
 		regs.clearFlags(ZERO)
 	} else{
 		regs.setFlags(ZERO)
 	}
+	regs.clearFlags(HALFCARRY)
 	CicleCounter += 4
 }
 func ld_h_xx(b uint8) {

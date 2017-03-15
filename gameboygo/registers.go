@@ -1,4 +1,4 @@
-package gameboygo
+package main
 import (
 	"fmt"
 )

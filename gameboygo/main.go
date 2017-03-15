@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
-	"gameboygo"
+	//"gameboygo"
 	"time"
 	"os"
-	"flag"
+	go_flag "flag"
 	//"runtime/pprof"
 	"github.com/veandco/go-sdl2/sdl"
 )
 func main() {
-	romFile := flag.String("rom", "Bc.gb", "Path to rom file") 
+	romFile := go_flag.String("rom", "Bc.gb", "Path to rom file") 
 	/*
 	var cpuprofile string = "prof"
 	f, err := os.Create(cpuprofile)
@@ -33,26 +33,26 @@ func main() {
     }
     defer renderer.Destroy()
     
-    texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, gameboygo.WIDTH, gameboygo.HEIGHT)
+    texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, WIDTH, HEIGHT)
     if err != nil {
     	panic(err)
     }
 
-    flag.Parse()
-    gameboygo.Load_rom(*romFile)
-    fmt.Printf("rom: %+v\n", gameboygo.Head)
-    gameboygo.Reset()
+    go_flag.Parse()
+    Load_rom(*romFile)
+    fmt.Printf("rom: %+v\n", Head)
+    Reset()
     renderer.SetDrawColor(0,0,0,255)
 	renderer.Clear()
 	for{
-		gameboygo.LastTimer = 0
-		gameboygo.LastScanLine = 0
-		gameboygo.LastDivTimer = 0
+		LastTimer = 0
+		LastScanLine = 0
+		LastDivTimer = 0
 		t := time.Now()
-		for gameboygo.CicleCounter = 0; gameboygo.CicleCounter < gameboygo.CPU_FREQ; {
+		for CicleCounter = 0; CicleCounter < CPU_FREQ; {
 			handleInput()
-			gameboygo.Execute()
-			gameboygo.UpdateGPU(renderer, texture)
+			Execute()
+			UpdateGPU(renderer, texture)
 		} 
 		fmt.Println(time.Second - time.Since(t))
 		time.Sleep(time.Second - time.Since(t))
@@ -65,45 +65,45 @@ func handleInput() {
 	case *sdl.KeyDownEvent:
 		switch eventType.Keysym.Sym{
 		case sdl.K_RIGHT :	//right
-			gameboygo.KeyPressed(gameboygo.KEY_RIGHT)
+			KeyPressed(KEY_RIGHT)
 		case sdl.K_LEFT:	//left
-			gameboygo.KeyPressed(gameboygo.KEY_LEFT)
+			KeyPressed(KEY_LEFT)
 		case sdl.K_DOWN:	//down
-			gameboygo.KeyPressed(gameboygo.KEY_DOWN)
+			KeyPressed(KEY_DOWN)
 		case sdl.K_UP:		//ip
-			gameboygo.KeyPressed(gameboygo.KEY_UP)
+			KeyPressed(KEY_UP)
 		case sdl.K_z:		//a
-			gameboygo.KeyPressed(gameboygo.KEY_A)
+			KeyPressed(KEY_A)
 		case sdl.K_x:		//b
-			gameboygo.KeyPressed(gameboygo.KEY_B)
+			KeyPressed(KEY_B)
 		case sdl.K_q:		//start
-			gameboygo.KeyPressed(gameboygo.KEY_START)
+			KeyPressed(KEY_START)
 		case sdl.K_w:		//select
-			gameboygo.KeyPressed(gameboygo.KEY_SELECT)
+			KeyPressed(KEY_SELECT)
 		}
 	case *sdl.KeyUpEvent:
 		switch eventType.Keysym.Sym{
 		case sdl.K_ESCAPE:
 			sdl.Quit()
-			//gameboygo.PrintStats()
+			//PrintStats()
 			//pprof.StopCPUProfile()
 			os.Exit(0)
 		case sdl.K_RIGHT :	//right
-			gameboygo.KeyReleased(gameboygo.KEY_RIGHT)
+			KeyReleased(KEY_RIGHT)
 		case sdl.K_LEFT:	//left
-			gameboygo.KeyReleased(gameboygo.KEY_LEFT)
+			KeyReleased(KEY_LEFT)
 		case sdl.K_DOWN:	//down
-			gameboygo.KeyReleased(gameboygo.KEY_DOWN)
+			KeyReleased(KEY_DOWN)
 		case sdl.K_UP:		//ip
-			gameboygo.KeyReleased(gameboygo.KEY_UP)
+			KeyReleased(KEY_UP)
 		case sdl.K_z:		//a
-			gameboygo.KeyReleased(gameboygo.KEY_A)
+			KeyReleased(KEY_A)
 		case sdl.K_x:		//b
-			gameboygo.KeyReleased(gameboygo.KEY_B)
+			KeyReleased(KEY_B)
 		case sdl.K_q:		//start
-			gameboygo.KeyReleased(gameboygo.KEY_START)
+			KeyReleased(KEY_START)
 		case sdl.K_w:		//select
-			gameboygo.KeyReleased(gameboygo.KEY_SELECT)
+			KeyReleased(KEY_SELECT)
 		}
 	}
 }

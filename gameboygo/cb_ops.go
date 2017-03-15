@@ -1,4 +1,4 @@
-package gameboygo
+package main
 
 var cb_op = [0x100]operations{
 	rlc_b,		//0x00

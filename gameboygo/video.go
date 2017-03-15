@@ -1,4 +1,4 @@
-package gameboygo
+package main
 
 import "github.com/veandco/go-sdl2/sdl"
 import "unsafe"
@@ -218,28 +218,16 @@ func DrawLine(renderer *sdl.Renderer) {
 			var l uint16 = (uint16(currentTile) % 8) * 2 //line of the tile that we are drawing: each tile has 8 lines and each line is 2 bytes
 			var data0 = ram[tileAddr + l + 0]
 			var data1 = ram[tileAddr + l + 1]
-			var c = getPixelColor(data0, data1, 7-(x%8), *Bgp)
+			var c = getPixelColor(data0, data1, 7-(x%8), *Bgp)  // ^x & 0x07
 			pos := ((int(*Ly)*WIDTH)*4) + (int(i)*4)
 			(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 0] = c
 			(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 1] = c
 			(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 2] = c
 			(*[BUFFER_SIZE]uint8)(p_pixels)[pos + 3] = 255
-			/*
-			pixels[pos + 0] = c   //R
-			pixels[pos + 1] = c   //G
-			pixels[pos + 2] = c   //B
-			pixels[pos + 3] = 255 //A
-			*/
 		}
 	}
 	if (*LcdControl & 0x02) != 0 { //draw sprites
 		var sy uint8 = 8 + ((*LcdControl & 0x04) << 1)
-		/*
-		if (*LcdControl & 0x04) == 0{
-			//Bit 2 - OBJ (Sprite) Size(0=8x8, 1=8x16)
-			sy = 16
-		}
-		*/
 		/*
 		Byte0  Y position on the screen
   		Byte1  X position on the screen
