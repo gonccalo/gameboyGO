@@ -19,10 +19,10 @@ Gameboy emulator in go
 ## Compile and run
 
 ```bash
-export GOPATH=/full/path/to/gameboyGO/
+go get -v github.com/veandco/go-sdl2/sdl
+go build gameboygo
 export GODEBUG=cgocheck=0
-go build
-./gameboyGO -rom <file>
+./gameboygo -rom <file>
 ```
 
 ## Dependencies
