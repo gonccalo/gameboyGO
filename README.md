@@ -19,8 +19,8 @@ Gameboy emulator in go
 ## Compile and run
 
 ```bash
-go get -v github.com/gonccalo/gameboyGO/gameboygo
 go get -v github.com/veandco/go-sdl2/sdl
+go get -v github.com/gonccalo/gameboyGO/gameboygo
 go build github.com/gonccalo/gameboyGO/gameboygo
 export GODEBUG=cgocheck=0
 ./gameboygo -rom <file>
