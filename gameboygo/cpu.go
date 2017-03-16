@@ -591,30 +591,31 @@ func rst_18(b uint8) {
 	CicleCounter += 16
 }
 func sbc_a_xx(b uint8) {
-	var val uint8 = readByte(regs.pc)
+	var val uint16 = uint16(readByte(regs.pc))
 	regs.pc++
 	//fmt.Printf("SBC a, %X: %X\n", val, b)
 	regs.setFlags(SUBTRACT)
+	var carry uint8 = 0
 	if regs.getFlag(CARRY){
-		val++
+		carry = 1
 	}
-	if val > regs.a {
+	if val + uint16(carry) > uint16(regs.a) {
 		regs.setFlags(CARRY)
 	} else {
 		regs.clearFlags(CARRY)
 	}
-	if (val & 0x0F) > (regs.a & 0x0F) {
+	if (val & 0x0F) + uint16(carry)> (uint16(regs.a) & 0x0F) {
 		regs.setFlags(HALFCARRY)
 	} else{
 		regs.clearFlags(HALFCARRY)
 	}
 
-	regs.a -= val
+	regs.a = uint8(uint16(regs.a) - val - uint16(carry))
 
-	if regs.a != 0 {
-		regs.clearFlags(ZERO)
-	} else{
+	if regs.a == 0 {
 		regs.setFlags(ZERO)
+	} else{
+		regs.clearFlags(ZERO)
 	}
 	CicleCounter += 8
 }
@@ -752,16 +753,17 @@ func adc_a_xx(b uint8) {
 	//fmt.Printf("ADC a, %X: %X\n", val, b)
 	regs.clearFlags(SUBTRACT)
 	var result uint16 = 0
+	var carry uint8  = 0
 	if regs.getFlag(CARRY){
-		result = 1
+		carry = 1
 	}
-	result += uint16(regs.a) + uint16(val)
-	if (result & 0xFF00) > 0{
+	result = uint16(regs.a) + uint16(val) + uint16(carry)
+	if result > 0xFF{
 		regs.setFlags(CARRY)
 	} else{
 		regs.clearFlags(CARRY)
 	}
-	if ((regs.a & 0x0F) + (val & 0x0F)) > 0x0F{
+	if ((regs.a & 0x0F) + (val & 0x0F) + carry) > 0x0F{
 		regs.setFlags(HALFCARRY)
 	} else{
 		regs.clearFlags(HALFCARRY)
