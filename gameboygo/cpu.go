@@ -1055,41 +1055,42 @@ func and_x(b uint8) {
 func sbc_a_x(b uint8) {
 	//fmt.Printf("SBC a, x: %X\n", b)
 	regs.setFlags(SUBTRACT)
-	var val uint8
+	var val uint16
+	var carry uint16
 	if regs.getFlag(CARRY){
-		val = 1
+		carry = 1
 	}
 	switch b{
 	case 0x98:
-		val += regs.b
+		val = uint16(regs.b)
 	case 0x99:
-		val += regs.c
+		val = uint16(regs.c)
 	case 0x9A:
-		val += regs.d
+		val = uint16(regs.d)
 	case 0x9B:
-		val += regs.e
+		val = uint16(regs.e)
 	case 0x9C:
-		val += regs.h
+		val = uint16(regs.h)
 	case 0x9D:
-		val += regs.l
+		val = uint16(regs.l)
 	case 0x9E:
-		val += readByte(regs.hl_read())
+		val = uint16(readByte(regs.hl_read()))
 		CicleCounter += 4
 	case 0x9F:
-		val += regs.a 
+		val = uint16(regs.a) 
 	}
-	if val > regs.a {
+	if (val + carry) > uint16(regs.a) {
 		regs.setFlags(CARRY)
 	} else {
 		regs.clearFlags(CARRY)
 	}
-	if (val & 0x0F) > (regs.a & 0x0F) {
+	if (val & 0x0F) + carry > (uint16(regs.a) & 0x0F) {
 		regs.setFlags(HALFCARRY)
 	} else{
 		regs.clearFlags(HALFCARRY)
 	}
 
-	regs.a -= val
+	regs.a = uint8(uint16(regs.a) - val - carry)
 
 	if regs.a != 0 {
 		regs.clearFlags(ZERO)
@@ -1146,42 +1147,43 @@ func adc_a_x(b uint8) {
 	regs.clearFlags(SUBTRACT)
 	var result uint16 = 0
 	var tmp uint8
+	var carry uint16 = 0
 	if regs.getFlag(CARRY){
-		result = 1
+		carry = 1
 	}
 	switch b{
 	case 0x88:
 		tmp = regs.b
-		result += uint16(regs.a) + uint16(regs.b)
+		result = uint16(regs.a) + uint16(regs.b) + carry
 	case 0x89:
 		tmp = regs.c
-		result += uint16(regs.a) + uint16(regs.c)
+		result = uint16(regs.a) + uint16(regs.c) + carry
 	case 0x8A:
 		tmp = regs.d
-		result += uint16(regs.a) + uint16(regs.d)
+		result = uint16(regs.a) + uint16(regs.d) + carry
 	case 0x8B:
 		tmp = regs.e
-		result += uint16(regs.a) + uint16(regs.e)
+		result = uint16(regs.a) + uint16(regs.e) + carry
 	case 0x8C:
 		tmp = regs.h
-		result += uint16(regs.a) + uint16(regs.h)
+		result = uint16(regs.a) + uint16(regs.h) + carry
 	case 0x8D:
 		tmp = regs.l
-		result += uint16(regs.a) + uint16(regs.l)
+		result = uint16(regs.a) + uint16(regs.l) + carry
 	case 0x8E:
 		tmp = readByte(regs.hl_read())
-		result += uint16(regs.a) + uint16(tmp)
+		result = uint16(regs.a) + uint16(tmp) 	 + carry
 		CicleCounter += 4
 	case 0x8F:
 		tmp = regs.a
-		result += uint16(regs.a) + uint16(regs.a)
+		result = uint16(regs.a) + uint16(regs.a) + carry
 	}
 	if (result & 0xFF00) > 0{
 		regs.setFlags(CARRY)
 	} else{
 		regs.clearFlags(CARRY)
 	}
-	if ((regs.a & 0x0F) + (tmp & 0x0F)) > 0x0F{
+	if ((uint16(regs.a) & 0x0F) + (uint16(tmp) & 0x0F) + carry) > 0x0F{
 		regs.setFlags(HALFCARRY)
 	} else{
 		regs.clearFlags(HALFCARRY)
@@ -1226,7 +1228,7 @@ func add_a_x(b uint8) {
 		CicleCounter += 4
 	case 0x87:
 		tmp = regs.a
-		result = uint32(regs.a + regs.a)
+		result = uint32(regs.a) + uint32(regs.a)
 	}
 	if ((regs.a & 0x0F) + (tmp & 0x0F)) > 0x0F{
 		regs.setFlags(HALFCARRY)
@@ -1688,7 +1690,7 @@ func add_hl_hl(b uint8) {
 	} else{
 		regs.clearFlags(CARRY)
 	}
-	if ((regs.hl_read() & 0x0F)+(regs.hl_read() & 0x0F)) > 0x0F {
+	if ((regs.hl_read() ^ regs.hl_read() ^ uint16(result&0xFFFF)) & 0x1000) != 0{
 		regs.setFlags(HALFCARRY)
 	} else{
 		regs.clearFlags(HALFCARRY)
@@ -1886,7 +1888,7 @@ func add_hl_de(b uint8) {
 	} else{
 		regs.clearFlags(CARRY)
 	}
-	if ((regs.hl_read() & 0x0F)+(regs.de_read() & 0x0F)) > 0x0F {
+	if ((regs.hl_read() ^ regs.de_read() ^ uint16(result&0xFFFF)) & 0x1000) != 0 {
 		regs.setFlags(HALFCARRY)
 	} else{
 		regs.clearFlags(HALFCARRY)
@@ -2142,7 +2144,7 @@ func add_hl_bc(b uint8) {
 	} else{
 		regs.clearFlags(CARRY)
 	}
-	if ((regs.hl_read() & 0x0F)+(regs.bc_read() & 0x0F)) > 0x0F {
+	if ((regs.hl_read() ^ regs.bc_read() ^ uint16(result&0xFFFF)) & 0x1000) != 0{
 		regs.setFlags(HALFCARRY)
 	} else{
 		regs.clearFlags(HALFCARRY)
