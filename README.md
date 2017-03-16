@@ -12,7 +12,9 @@ Gameboy emulator in go
 ![out](https://cloud.githubusercontent.com/assets/5223817/23906938/74379006-08c7-11e7-9f99-e7e6121e1a64.gif)
 
 ## TODO:
-* STOP, HALT and DAA instructions
+* Use test roms to debug emulator
+* Fix framerate
+* STOP and HALT instructions
 * Support roms bigger than 32K
 * Sound
 
