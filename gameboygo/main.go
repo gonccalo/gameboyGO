@@ -44,7 +44,7 @@ func main() {
     Reset()
     renderer.SetDrawColor(0,0,0,255)
 	renderer.Clear()
-	for{
+	for {
 		LastTimer = 0
 		LastScanLine = 0
 		LastDivTimer = 0

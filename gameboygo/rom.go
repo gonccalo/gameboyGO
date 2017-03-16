@@ -60,19 +60,24 @@ func Load_rom(filename string) {
 	}
 	Head.init(data)
 	
-	if num := copy(Rom1, data[:0x4000]); num != 0x4000 {
+	if num := copy(ram[:0x4000], data[:0x4000]); num != 0x4000 {
 		fmt.Printf("ERRO copiados: %d", num)
 		return
 	}
 	switch Head.cart_type{
 	case ROM_ONLY:
-		if num := copy(RomN, data[0x4000:]); num != 0x4000{
+		if num := copy(ram[0x4000:0x8000], data[0x4000:]); num != 0x4000{
+			fmt.Printf("ERRO no bankn, copiados %d\n", num)
+			return
+		}
+	case ROM_MBC1:
+		if num := copy(ram[0x4000:0x8000], data[0x4000:]); num != 0x4000{
 			fmt.Printf("ERRO no bankn, copiados %d\n", num)
 			return
 		}
 	}
-	//fmt.Printf("%v\n",Rom1)
-	//fmt.Printf("%T\n",ram)
+	//fmt.Printf("%v\n",data[0x4000:])
+	//fmt.Printf("%T\n",ram[0x4000:])
 	return
 
 }

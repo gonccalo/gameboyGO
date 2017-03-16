@@ -1,8 +1,6 @@
 package main
 //import "fmt"
 var ram [0x10000]uint8
-var Rom1 		= ram[0x0000:0x4000]
-var RomN 		= ram[0x4000:0x8000]
 
 func writeByte(addr uint16, b uint8) bool{
 	if addr >= 0xE000 && addr < 0xFE00 {	//echo zone

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	//"fmt"
 )
 /*
 RES
@@ -353,7 +353,7 @@ func ExecuteDebug() {
 	var op = readByte(regs.pc)
 	regs.pc++
 	ops[op](op)
-	opstats[op]++
+	//opstats[op]++
 	//fmt.Printf("%v\n", &regs)
 	if debug == 0 {
 		input = ""
@@ -424,17 +424,17 @@ func ld_hl_sp(b uint8) {
 	var val int8 = int8(readByte(regs.pc))
 	regs.pc++
 	var res uint32 = uint32(int16(regs.sp) + int16(val))
-	if ((uint16(val) & 0x0F) + (regs.sp & 0x0F)) > 0x0F{
+	if ((regs.sp ^ uint16(val) ^ uint16(res&0xFFFF)) & 0x010) == 0x010{
 		regs.setFlags(HALFCARRY)
 	} else{
 		regs.clearFlags(HALFCARRY)
 	}
-	if (res & 0xFF0000) > 0 {
+	if ((regs.sp ^ uint16(val) ^ uint16(res&0xFFFF)) & 0x100) == 0x100 {
 		regs.setFlags(CARRY)
 	} else {
 		regs.clearFlags(CARRY)
 	}
-	regs.hl_write(uint16(0xFFFF&res))
+	regs.hl_write(uint16(0x00FFFF&res))
 	CicleCounter += 12
 }
 func rst_30(b uint8) {
@@ -525,12 +525,12 @@ func add_sp_xx(b uint8) {
 	//fmt.Printf("ADD sp, %X: %X\n", val, b)
 	regs.clearFlags(ZERO|SUBTRACT)
 	var result uint32 = uint32(int16(regs.sp) + int16(val))
-	if (result & 0xFF0000) > 0{
+	if ((regs.sp ^ uint16(val) ^ (uint16(result& 0xFFFF))) & 0x100) == 0x100{
 		regs.setFlags(CARRY)
 	} else{
 		regs.clearFlags(CARRY)
 	}
-	if ((regs.sp & 0x0F) + (uint16(val) & 0x0F)) > 0x0F{
+	if ((regs.sp ^ uint16(val) ^ (uint16(result& 0xFFFF))) & 0x010) == 0x010{
 		regs.setFlags(HALFCARRY)
 	} else{
 		regs.clearFlags(HALFCARRY)
@@ -1535,12 +1535,12 @@ func add_hl_sp(b uint8){
 	} else{
 		regs.clearFlags(CARRY)
 	}
-	if ((regs.hl_read() & 0x0F)+(regs.sp & 0x0F)) > 0x0F {
+	if ((regs.hl_read()^regs.sp^uint16(result&0xFFFF)) & 0x1000) != 0 {
 		regs.setFlags(HALFCARRY)
 	} else{
 		regs.clearFlags(HALFCARRY)
 	}
-	regs.hl_write(uint16(result))
+	regs.hl_write(uint16(0x00FFFF&result))
 	CicleCounter +=  8
 }
 func ld_a_hld(b uint8){
@@ -1706,7 +1706,7 @@ func jr_z_xx(b uint8) {
 	CicleCounter += 8
 }
 func daa(b uint8) {
-	fmt.Printf("DAA: %X\n", b)
+	//fmt.Printf("DAA: %X\n", b)
 	var tmp uint16 = uint16(regs.a)
 	if regs.getFlag(SUBTRACT) {
 		if regs.getFlag(HALFCARRY) {
@@ -1889,7 +1889,7 @@ func add_hl_de(b uint8) {
 	} else{
 		regs.clearFlags(HALFCARRY)
 	}
-	regs.hl_write(uint16(result))
+	regs.hl_write(uint16(result & 0x00FFFF))
 	CicleCounter += 8
 }
 func jr_xx(b uint8) {
@@ -1973,7 +1973,7 @@ func ld_de_aabb(b uint8) {
 	CicleCounter += 12
 }
 func stop(b uint8) {
-	fmt.Printf("TODO-STOP : %X\n", b)
+	//fmt.Printf("TODO-STOP : %X\n", b)
 	regs.pc++
 	CicleCounter += 4
 }

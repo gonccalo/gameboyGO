@@ -37,7 +37,7 @@ const(
 )
 func (r *registers)af_write(data uint16) {
 	r.a = uint8((data & 0xFF00) >> 8)
-	r.f = uint8(data & 0x00FF)
+	r.f = uint8(data & 0x00F0)
 }
 func (r *registers)af_read() uint16{
 	return uint16((uint16(r.a) << 8) | uint16(r.f)) 
