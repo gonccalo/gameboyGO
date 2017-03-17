@@ -1989,12 +1989,8 @@ func rrca(b uint8) {
 		regs.clearFlags(CARRY)
 	}
 	regs.a = (regs.a >> 1) | (regs.a << 7)
-	if regs.a == 0{
-		regs.setFlags(ZERO)
-	} else{
-		regs.clearFlags(ZERO)
-	}
-	regs.clearFlags(SUBTRACT|HALFCARRY)
+	
+	regs.clearFlags(SUBTRACT|HALFCARRY|ZERO)
 	CicleCounter += 4
 }
 func ld_c_xx(b uint8) {
@@ -2119,12 +2115,8 @@ func rlca(b uint8) {
 		regs.clearFlags(CARRY)
 	}
 	regs.a = ((regs.a << 1) | (regs.a >> 7))
-	if regs.a == 0{
-		regs.setFlags(ZERO)
-	} else{
-		regs.clearFlags(ZERO)
-	}
-	regs.clearFlags(SUBTRACT|HALFCARRY)
+
+	regs.clearFlags(SUBTRACT|HALFCARRY|ZERO)
 	CicleCounter += 4
 }
 func ld_aabb_sp(b uint8) {
