@@ -4,17 +4,17 @@
 Gameboy emulator in go
 
 ## Current state:
-* Almost all instructions implemented
 * Interrupts
 * Joypad
 * Video
+* Timers
+* Cpu test roms passed
+* Tennis and Tetris working
 
-![deepinscreenshot20170311174946](https://cloud.githubusercontent.com/assets/5223817/23828040/fdea1502-06bb-11e7-878d-41d2599a5f08.png)
-![deepinscreenshot20170311174919](https://cloud.githubusercontent.com/assets/5223817/23828042/11940824-06bc-11e7-8d8e-8faa3f5fa198.png)
+![out2](https://cloud.githubusercontent.com/assets/5223817/24856667/7309c2f0-1ddd-11e7-82f3-ff527d51b0d8.gif)
 ![out](https://cloud.githubusercontent.com/assets/5223817/23906938/74379006-08c7-11e7-9f99-e7e6121e1a64.gif)
 
 ## TODO:
-* Use test roms to debug emulator
 * Fix framerate
 * STOP and HALT instructions
 * Support roms bigger than 32K
