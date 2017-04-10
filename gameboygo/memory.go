@@ -1,12 +1,19 @@
 package main
+import "os"
 //import "fmt"
 var ram [0x10000]uint8
 
 func writeByte(addr uint16, b uint8) bool{
+	if addr < 0x8000{
+		return true
+	}
 	if addr >= 0xE000 && addr < 0xFE00 {	//echo zone
 		ram[addr] = b
 		ram[0xC000+(addr-0xE000)] = b
 		return true
+	} else if addr == 0xFF07{
+		ram[0xFF07] = b
+		setupTimers()
 	} else if (addr == 0xFF04) || (addr == 0xFF44){				//Divider register || LCDC y coordinate
 		ram[addr] = 0x00
 		return true
@@ -22,6 +29,16 @@ func writeByte(addr uint16, b uint8) bool{
 			writeByte(0xFe00+i, readByte(src+i))
 		}
 		return true
+	} else if addr == 0xFF01{
+		//serial?
+		f, err := os.OpenFile("testing.txt", os.O_APPEND|os.O_WRONLY, 0600)
+		if err != nil {
+    		panic(err)
+		}
+		if _, err = f.WriteString(string(b)); err != nil {
+    		panic(err)
+		}
+		f.Close()
 	}
 	ram[addr] = b
 	return true
@@ -38,36 +55,4 @@ func read16bits(addr uint16) uint16{
 func write16bits(addr uint16, data uint16) {
 	writeByte(addr, uint8(data & 0x00FF))
 	writeByte(addr+1,uint8((data & 0xFF00) >> 8))
-}
-func getTimerFreq() int{ //0 if clock is stoped or frequency if started
-	if (ram[0xFF07] & 0x04) == 0{
-		return 0
-	}
-	switch ram[0xFF07] & 0x03{
-		case 0x00:
-			return CPU_FREQ/4096
-		case 0x01:
-			return CPU_FREQ/262144
-		case 0x02:
-			return CPU_FREQ/65536
-		case 0x03:
-			return CPU_FREQ/16384
-		default:
-			return 0
-	}
-}
-func incTimer() {
-	if tfreq := getTimerFreq(); (tfreq != 0) && ((int(CicleCounter/tfreq) - LastTimer) >= 1) {
-		LastTimer = int(CicleCounter/tfreq)
-		ram[0xFF05]++
-		if ram[0xFF05] == 0 {
-			setInterruptsFlag(TIMER)
-			ram[0xFF05] = ram[0xFF06]
-			//fmt.Println("TIMER INTERRUPT")
-		}
-	}
-	if int(CicleCounter/(CPU_FREQ/16384)) - LastDivTimer >= 1 {
-		LastDivTimer = int(CicleCounter/(CPU_FREQ/16384))
-		ram[0xFF04]++
-	}
 }

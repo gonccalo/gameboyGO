@@ -75,6 +75,11 @@ func Load_rom(filename string) {
 			fmt.Printf("ERRO no bankn, copiados %d\n", num)
 			return
 		}
+	default:
+		if num := copy(ram[0x4000:0x8000], data[0x4000:]); num != 0x4000{
+			fmt.Printf("ERRO no bankn, copiados %d\n", num)
+			return
+		}
 	}
 	//fmt.Printf("%v\n",data[0x4000:])
 	//fmt.Printf("%T\n",ram[0x4000:])

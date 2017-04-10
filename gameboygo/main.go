@@ -2,24 +2,31 @@ package main
 
 import (
 	"fmt"
-	//"gameboygo"
 	"time"
 	"os"
 	go_flag "flag"
 	//"runtime/pprof"
 	"github.com/veandco/go-sdl2/sdl"
 )
+
 func main() {
-	romFile := go_flag.String("rom", "Bc.gb", "Path to rom file") 
 	/*
-	var cpuprofile string = "prof"
-	f, err := os.Create(cpuprofile)
-    if err != nil {
-        panic(err)
+	if *profiling {
+    	var cpuprofile string = "prof"
+		f, err := os.Create(cpuprofile)
+    	if err != nil {
+        	panic(err)
+    	}
+    	pprof.StartCPUProfile(f)
+    	defer pprof.StopCPUProfile()
     }
-    pprof.StartCPUProfile(f)
-    defer pprof.StopCPUProfile()
-	*/
+    */
+    //flags
+	romFile := go_flag.String("rom", "Bc.gb", "Path to rom file")
+	fdebug  := go_flag.Bool("debug", false, "Set to true to enable debugging")
+	go_flag.Parse()
+
+	//init sdl stuff
 	sdl.Init(sdl.INIT_EVERYTHING)
 	window, err := sdl.CreateWindow("gameboyGO", sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED,
         256, 256, sdl.WINDOW_SHOWN)
@@ -32,34 +39,43 @@ func main() {
     	panic(err)
     }
     defer renderer.Destroy()
-    
     texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, WIDTH, HEIGHT)
     if err != nil {
     	panic(err)
     }
-
-    go_flag.Parse()
+    
     Load_rom(*romFile)
     fmt.Printf("rom: %+v\n", Head)
     Reset()
     renderer.SetDrawColor(0,0,0,255)
 	renderer.Clear()
-	for {
-		LastTimer = 0
-		LastScanLine = 0
-		LastDivTimer = 0
-		t := time.Now()
-		for CicleCounter = 0; CicleCounter < CPU_FREQ; {
-			handleInput()
-			Execute()
-			UpdateGPU(renderer, texture)
-		} 
-		fmt.Println(time.Second - time.Since(t))
-		time.Sleep(time.Second - time.Since(t))
+	if *fdebug {
+		for {
+			t := time.Now()
+			for CicleCounter = 0; (CicleCounter < CPU_FREQ); {
+				handleInput()
+				ExecuteDebug()
+				UpdateGPU(renderer, texture, cicles_op)
+			} 
+			fmt.Println(time.Second - time.Since(t))
+			time.Sleep(time.Second - time.Since(t))
+		}
+	} else{
+		for {
+			CicleCounter = 0
+			t := time.Now()
+			for ;(CicleCounter <= CPU_FREQ); {
+				handleInput()
+				Execute()
+				UpdateGPU(renderer, texture, cicles_op)
+			} 
+			fmt.Println(time.Second - time.Since(t))
+			time.Sleep(time.Second - time.Since(t))
+		}
 	}
 }
 
-func handleInput() {
+func handleInput(){
 	var event sdl.Event = sdl.PollEvent()
 	switch eventType := event.(type) {
 	case *sdl.KeyDownEvent:
@@ -84,10 +100,15 @@ func handleInput() {
 	case *sdl.KeyUpEvent:
 		switch eventType.Keysym.Sym{
 		case sdl.K_ESCAPE:
+			//printStats()
+			//fmt.Printf("%v", ram)
 			sdl.Quit()
-			//PrintStats()
-			//pprof.StopCPUProfile()
 			os.Exit(0)
+			/*
+			if *profiling {
+				pprof.StopCPUProfile()	
+			}
+			*/
 		case sdl.K_RIGHT :	//right
 			KeyReleased(KEY_RIGHT)
 		case sdl.K_LEFT:	//left

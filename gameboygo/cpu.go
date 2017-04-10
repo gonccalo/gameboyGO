@@ -1,7 +1,7 @@
 package main
 
 import (
-	//"fmt"
+	"fmt"
 )
 /*
 RES
@@ -14,7 +14,7 @@ https://www.youtube.com/watch?v=CImyDBJSTsQ
 https://cturt.github.io/cinoop.html
 */
 
-type operations func(uint8)
+type operations func(uint8) int
 const(
 	CPU_FREQ int = 4194304
 )
@@ -276,18 +276,20 @@ var ops = [0x100]operations{
 	cp_xx,		//0xFE
 	rst_38,}	//0xFF
 
-var regs registers
-var halted bool
-var LastTimer int
-var LastDivTimer int
-var CicleCounter int
-var ime bool
-
-
-//var debug int
+var (
+	regs 		 registers
+	halted 		 bool
+	LastTimer 	 int
+	LastDivTimer int
+	CicleCounter int
+	cicles_op	 int
+	ime  		 bool
+	debugcount   int
+)
 
 func Reset() {
 	CicleCounter = 0
+	cicles_op    = 0
 	ime = true
 	halted = false
 	LastTimer = 0
@@ -335,53 +337,63 @@ func Reset() {
 }
 
 func Execute() {
-	incTimer()
-	InterruptExec()
 	op := readByte(regs.pc)
 	regs.pc++
-	ops[op](op)
+	cicles_op = ops[op](op)
+	CicleCounter += cicles_op 
+	incTimer(cicles_op)
+	InterruptExec()
 }
-/*
+
 func ExecuteDebug() {
 	var input string
-	//fmt.Printf("%v\n", &regs)
-	if tfreq := getTimerFreq(); (tfreq != 0) && ((int(CicleCounter/tfreq) - LastTimer) >= 1) {
-		LastTimer = int(CicleCounter/tfreq)
-		incTimer()
-	}
-	InterruptExec()
 	var op = readByte(regs.pc)
 	regs.pc++
-	ops[op](op)
+	cicles_op = ops[op](op)
 	//opstats[op]++
-	//fmt.Printf("%v\n", &regs)
-	if debug == 0 {
+	CicleCounter += cicles_op
+	incTimer(cicles_op)
+	InterruptExec()
+	if debugcount == 0 {
+		fmt.Printf("%v\n", &regs)
 		input = ""
-		//fmt.Scanln(&input)
+		fmt.Scanln(&input)
 		if input == "s" {
-			debug = 100
+			debugcount = 100
 		} else if input == "m"{
-			debug = 1000
-		} else if input == "end"{
-			return
-		}	
+			debugcount = 1000
+		} else if input == "h"{
+			debugcount = 400000
+		} else if input == "continue"{
+			debugcount = -1
+		} else if input == "show" {
+			fmt.Scanln(&input)
+			var addrtoprint int 
+			if _, err := fmt.Sscanf(input, "%4X", &addrtoprint); err == nil {
+    			fmt.Println(readByte(uint16(addrtoprint)))
+			}
+			fmt.Scanln(&input)
+		}
+		fmt.Print("\033[H\033[2J")
+	} else if debugcount == -1{
+		
 	} else{
-		debug--
+		debugcount--
 	}
 }
-*/
-func rst_38(b uint8) {
+
+func rst_38(b uint8) int{
 	//fmt.Printf("RST 38: %X\n", b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.pc)
 	regs.pc = 0x0038
-	CicleCounter += 16
+	return 16
 }
-func cp_xx(b uint8) {
-	//fmt.Printf("CP xx: %X\n", b)
-	regs.setFlags(SUBTRACT)
+func cp_xx(b uint8) int{
 	var val uint8 = readByte(regs.pc)
 	regs.pc++
+	//fmt.Printf("CP %X: %X\n", val, b)
+	regs.setFlags(SUBTRACT)
 	if regs.a == val{
 		regs.setFlags(ZERO)
 	} else{
@@ -397,28 +409,28 @@ func cp_xx(b uint8) {
 	} else{
 		regs.clearFlags(CARRY)
 	}
-	CicleCounter += 8
+	return 8
 }
-func ei(b uint8) {
+func ei(b uint8) int{
 	//fmt.Printf("EI: %X\n", b)
 	ime = true
-	CicleCounter += 4
+	return 4
 	//interrupts are enabled after instruction after EI is executed
 }
-func ld_a_aabb(b uint8) {
+func ld_a_aabb(b uint8) int{
 	var address uint16 = read16bits(regs.pc)
 	regs.pc += 2  
 	var val uint8 = readByte(address)
 	//fmt.Printf("LD a, %X: %X\n", address, b)
 	regs.a = val
-	CicleCounter += 16
+	return 16
 }
-func ld_sp_hl(b uint8) {
+func ld_sp_hl(b uint8) int{
 	//fmt.Printf("LD sp, hl: %X\n", b)
 	regs.sp = regs.hl_read()
-	CicleCounter += 8
+	return 8
 }
-func ld_hl_sp(b uint8) {
+func ld_hl_sp(b uint8) int{
 	//fmt.Printf("LDHL sp, n: %X\n", b)
 	regs.clearFlags(ZERO|SUBTRACT)
 	var val int8 = int8(readByte(regs.pc))
@@ -435,16 +447,16 @@ func ld_hl_sp(b uint8) {
 		regs.clearFlags(CARRY)
 	}
 	regs.hl_write(uint16(0x00FFFF&res))
-	CicleCounter += 12
+	return 12
 }
-func rst_30(b uint8) {
+func rst_30(b uint8) int{
 	//fmt.Printf("RST 30: %X\n", b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.pc)
 	regs.pc =0x0030
-	CicleCounter += 16
+	return 16
 }
-func or_xx(b uint8) {
+func or_xx(b uint8) int{
 	regs.clearFlags(SUBTRACT|HALFCARRY|CARRY)
 	var val uint8 = readByte(regs.pc)
 	regs.pc++
@@ -455,46 +467,46 @@ func or_xx(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 8
+	return 8
 }
-func push_af(b uint8) {
+func push_af(b uint8) int{
 	//fmt.Printf("PUSH af: %X\n", b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.af_read())
-	CicleCounter += 16
+	return 16
 }
-func di(b uint8) {
+func di(b uint8) int{
 	//fmt.Printf("DI: %X\n", b)
 	ime = false
-	CicleCounter += 4
+	return 4
 	//interrupts are disabled after instruction after DI is executed.
 }
-func ld_a_c(b uint8) {
-	//fmt.Printf("LD a, (c): %X\n", b)
+func ld_a_c(b uint8) int{
+	//fmt.Printf("LD a, (0xFF00 + c): %X\n", b)
 	regs.a = readByte(0xFF00 + uint16(regs.c))
-	CicleCounter += 8
+	return 8
 }
-func pop_af(b uint8) {
+func pop_af(b uint8) int{
 	//fmt.Printf("POP af: %X\n", b)
 	regs.af_write(read16bits(regs.sp))
 	regs.sp += 2
-	CicleCounter += 12
+	return 12
 }
-func ldh_a_xx(b uint8) {
+func ldh_a_xx(b uint8) int{
 	var val uint8 = readByte(regs.pc)
 	regs.pc++
 	//fmt.Printf("LDH a, %X: %X\n", val, b)
 	regs.a = readByte(0xFF00 + uint16(0x00FF&val))
-	CicleCounter += 12
+	return 12
 }
-func rst_28(b uint8) {
+func rst_28(b uint8) int{
 	//fmt.Printf("RST 28: %X\n", b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.pc)
 	regs.pc =0x0028
-	CicleCounter += 16
+	return 16
 }
-func xor_xx(b uint8) {
+func xor_xx(b uint8) int{
 	regs.clearFlags(SUBTRACT|HALFCARRY|CARRY)
 	var val uint8 = readByte(regs.pc)
 	regs.pc++
@@ -505,21 +517,21 @@ func xor_xx(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 8
+	return 8
 }
-func ld_aabb_a(b uint8) {
+func ld_aabb_a(b uint8) int{
 	var dest uint16 = read16bits(regs.pc)
 	regs.pc += 2
 	//fmt.Printf("LD %X, a: %X\n", dest, b)
 	writeByte(dest, regs.a)
-	CicleCounter += 16
+	return 16
 }
-func jp_hl(b uint8) {
+func jp_hl(b uint8) int{
 	//fmt.Printf("JP hl: %X\n", b)
 	regs.pc = regs.hl_read()
-	CicleCounter += 4
+	return 4
 }
-func add_sp_xx(b uint8) {
+func add_sp_xx(b uint8) int{
 	var val int8 = int8(readByte(regs.pc))
 	regs.pc++
 	//fmt.Printf("ADD sp, %X: %X\n", val, b)
@@ -536,16 +548,16 @@ func add_sp_xx(b uint8) {
 		regs.clearFlags(HALFCARRY)
 	}
 	regs.sp = uint16(result & 0x0000FFFF)
-	CicleCounter += 16
+	return 16
 }
-func rst_20(b uint8) {
+func rst_20(b uint8) int{
 	//fmt.Printf("RST 20: %X\n", b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.pc)
 	regs.pc =0x0020
-	CicleCounter += 16
+	return 16
 }
-func and_xx(b uint8) {
+func and_xx(b uint8) int{
 	var val uint8 = readByte(regs.pc)
 	regs.pc++
 	//fmt.Printf("AND %X: %X\n", val, b)
@@ -557,40 +569,40 @@ func and_xx(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 8
+	return 8
 }
-func push_hl(b uint8) {
+func push_hl(b uint8) int{
 	//fmt.Printf("PUSH hl: %X\n", b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.hl_read())
-	CicleCounter += 16
+	return 16
 }
-func ld_c_a(b uint8) {
+func ld_c_a(b uint8) int{
 	//fmt.Printf("LD (c), a: %X\n", b)
 	writeByte(0xFF00+uint16(regs.c), regs.a)
-	CicleCounter += 8
+	return 8
 }
-func pop_hl(b uint8) {
+func pop_hl(b uint8) int{
 	//fmt.Printf("POP hl: %X\n", b)
 	regs.hl_write(read16bits(regs.sp))
 	regs.sp += 2
-	CicleCounter += 12
+	return 12
 }
-func ld_xx_a(b uint8) {
+func ld_xx_a(b uint8) int{
 	var val uint16 = uint16(readByte(regs.pc))
 	regs.pc++
 	//fmt.Printf("LDH (0xFF00 + %X), a: %X\n", val, b)
 	writeByte(0xFF00+val, regs.a)
-	CicleCounter += 12
+	return 12
 }
-func rst_18(b uint8) {
+func rst_18(b uint8) int{
 	//fmt.Printf("RST 18: %X\n", b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.pc)
 	regs.pc =0x0018
-	CicleCounter += 16
+	return 16
 }
-func sbc_a_xx(b uint8) {
+func sbc_a_xx(b uint8) int{
 	var val uint16 = uint16(readByte(regs.pc))
 	regs.pc++
 	//fmt.Printf("SBC a, %X: %X\n", val, b)
@@ -604,7 +616,7 @@ func sbc_a_xx(b uint8) {
 	} else {
 		regs.clearFlags(CARRY)
 	}
-	if (val & 0x0F) + uint16(carry)> (uint16(regs.a) & 0x0F) {
+	if (val & 0x0F) + uint16(carry) > (uint16(regs.a) & 0x0F) {
 		regs.setFlags(HALFCARRY)
 	} else{
 		regs.clearFlags(HALFCARRY)
@@ -617,9 +629,9 @@ func sbc_a_xx(b uint8) {
 	} else{
 		regs.clearFlags(ZERO)
 	}
-	CicleCounter += 8
+	return 8
 }
-func call_c_aabb(b uint8) {
+func call_c_aabb(b uint8) int{
 	var dest uint16 = read16bits(regs.pc)
 	regs.pc += 2
 	//fmt.Printf("CALL c, %X: %X\n", dest, b)
@@ -627,48 +639,45 @@ func call_c_aabb(b uint8) {
 		regs.sp -= 2
 		write16bits(regs.sp, regs.pc)
 		regs.pc = dest
-		CicleCounter += 24
-		return
+		return 24
 	}
-	CicleCounter += 12
+	return 12
 }
-func jp_c_aabb(b uint8) {
+func jp_c_aabb(b uint8) int{
 	var dest uint16 = read16bits(regs.pc)
 	//fmt.Printf("JP c, %X: %X\n", dest, b)
 	regs.pc += 2
 	if regs.getFlag(CARRY){
 		regs.pc = dest
-		CicleCounter += 16
-		return
+		return 16
 	}
-	CicleCounter += 12
+	return 12
 }
-func reti(b uint8) {
+func reti(b uint8) int{
 	//fmt.Printf("RETI: %X\n", b)
 	regs.pc = read16bits(regs.sp)
 	regs.sp += 2
 	ime = true
-	CicleCounter += 16
+	return 16
 }
-func ret_c(b uint8) {
+func ret_c(b uint8) int{
 	//fmt.Printf("RET c: %X\n", b)
 	if regs.getFlag(CARRY) {
 		dest := read16bits(regs.sp)
 		regs.sp += 2
 		regs.pc = dest
-		CicleCounter += 20
-		return
+		return 20
 	}
-	CicleCounter += 8
+	return 8
 }
-func rst_10(b uint8) {
+func rst_10(b uint8) int{
 	//fmt.Printf("RST 10: %X\n", b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.pc)
 	regs.pc =0x0010
-	CicleCounter += 16
+	return 16
 }
-func sub_xx(b uint8) {
+func sub_xx(b uint8) int{
 	var val uint8 = readByte(regs.pc)
 	regs.pc++
 	//fmt.Printf("SUB %X: %X\n", val, b)
@@ -691,15 +700,15 @@ func sub_xx(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 8
+	return 8
 }
-func push_de(b uint8) {
+func push_de(b uint8) int{
 	//fmt.Printf("PUSH de: %X\n", b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.de_read())
-	CicleCounter += 16
+	return 16
 }
-func call_nc_aabb(b uint8) {
+func call_nc_aabb(b uint8) int{
 	var dest uint16 = read16bits(regs.pc)
 	regs.pc += 2
 	//fmt.Printf("CALL nc, %X: %X\n", dest, b)
@@ -707,47 +716,44 @@ func call_nc_aabb(b uint8) {
 		regs.sp -= 2
 		write16bits(regs.sp, regs.pc)
 		regs.pc = dest
-		CicleCounter += 24
-		return
+		return 24
 	}
-	CicleCounter += 12
+	return 12
 }
-func jp_nc_aabb(b uint8) {
+func jp_nc_aabb(b uint8) int{
 	var dest uint16 = read16bits(regs.pc)
 	//fmt.Printf("JP nc, %X: %X\n", dest, b)
 	regs.pc += 2
 	if !regs.getFlag(CARRY){
 		regs.pc = dest
-		CicleCounter += 16
-		return
+		return 16
 	}
-	CicleCounter += 12
+	return 12
 }
-func pop_de(b uint8) {
+func pop_de(b uint8) int{
 	//fmt.Printf("POP de: %X\n", b)
 	regs.de_write(read16bits(regs.sp))
 	regs.sp += 2
-	CicleCounter += 12
+	return 12
 }
-func ret_nc(b uint8) {
+func ret_nc(b uint8) int{
 	//fmt.Printf("RET nc: %X\n", b)
 	if !regs.getFlag(CARRY) {
 		dest := read16bits(regs.sp)
 		regs.sp += 2
 		regs.pc = dest
-		CicleCounter += 20
-		return
+		return 20
 	}
-	CicleCounter += 8
+	return 8
 }
-func rst_08(b uint8) {
+func rst_08(b uint8) int{
 	//fmt.Printf("RST 08: %X\n", b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.pc)
 	regs.pc = 0x0008
-	CicleCounter += 16
+	return 16
 }
-func adc_a_xx(b uint8) {
+func adc_a_xx(b uint8) int{
 	var val uint8 = readByte(regs.pc)
 	regs.pc++
 	//fmt.Printf("ADC a, %X: %X\n", val, b)
@@ -776,18 +782,18 @@ func adc_a_xx(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 8
+	return 8
 }
-func call_aabb(b uint8) {
+func call_aabb(b uint8) int{
 	var dest uint16 = read16bits(regs.pc)
 	regs.pc += 2
 	//fmt.Printf("CALL %X: %X\n", dest, b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.pc)
 	regs.pc = dest
-	CicleCounter += 24
+	return 24
 }
-func call_z_aabb(b uint8) {
+func call_z_aabb(b uint8) int{
 	var dest uint16 = read16bits(regs.pc)
 	regs.pc += 2
 	//fmt.Printf("CALL z, %X: %X\n", dest, b)
@@ -795,55 +801,51 @@ func call_z_aabb(b uint8) {
 		regs.sp -= 2
 		write16bits(regs.sp, regs.pc)
 		regs.pc = dest
-		CicleCounter += 24
-		return
+		return 24
 	}
-	CicleCounter += 12
+	return 12
 }
-func many_ops(b uint8) {
-	//fmt.Printf("TODO: many_ops\n")
+func many_ops(b uint8) int{
 	op := readByte(regs.pc)
 	//fmt.Printf("CB %X\n", op)
 	regs.pc++
-	cb_op[op](op)
+	return cb_op[op](op)
 }
-func jp_z_aabb(b uint8) {
+func jp_z_aabb(b uint8) int{
 	var dest uint16 = read16bits(regs.pc)
 	//fmt.Printf("JP z, %X: %X\n",dest, b)
 	regs.pc += 2
 	if regs.getFlag(ZERO){
 		regs.pc = dest
-		CicleCounter += 16
-		return
+		return 16
 	}
-	CicleCounter += 12
+	return 12
 }
-func ret(b uint8) {
+func ret(b uint8) int{
 	//fmt.Printf("RET: %X\n", b)
 	dest := read16bits(regs.sp)
 	regs.sp += 2
 	regs.pc = dest
-	CicleCounter += 16
+	return 16
 }
-func ret_z(b uint8) {
+func ret_z(b uint8) int{
 	//fmt.Printf("RET z: %X\n", b)
 	if regs.getFlag(ZERO) {
 		dest := read16bits(regs.sp)
 		regs.sp += 2
 		regs.pc = dest
-		CicleCounter += 20
-		return
+		return 20
 	}
-	CicleCounter += 8
+	return 8
 }
-func rst_oo(b uint8) {
+func rst_oo(b uint8) int{
 	//fmt.Printf("RST 00: %X\n", b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.pc)
 	regs.pc =0x0000
-	CicleCounter += 16
+	return 16
 }
-func add_a_xx(b uint8) {
+func add_a_xx(b uint8) int{
 	var val uint8 = readByte(regs.pc)
 	regs.pc++
 	//fmt.Printf("ADD a, %X: %X\n", val, b)
@@ -868,15 +870,15 @@ func add_a_xx(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 8
+	return 8
 }
-func push_bc(b uint8) {
+func push_bc(b uint8) int{
 	//fmt.Printf("PUSH bc: %X\n", b)
 	regs.sp -= 2
 	write16bits(regs.sp, regs.bc_read())
-	CicleCounter += 16
+	return 16
 }
-func call_nz_aabb(b uint8) {
+func call_nz_aabb(b uint8) int{
 	var dest uint16 = read16bits(regs.pc)
 	regs.pc += 2
 	//fmt.Printf("CALL nz, %X: %X\n", dest, b)
@@ -884,67 +886,71 @@ func call_nz_aabb(b uint8) {
 		regs.sp -= 2
 		write16bits(regs.sp, regs.pc)
 		regs.pc = dest
-		CicleCounter += 24
-		return
+		return 24
 	}
-	CicleCounter += 12
+	return 12
 }
-func jp_aabb(b uint8) {
+func jp_aabb(b uint8) int{
 	var dest uint16 = read16bits(regs.pc)
 	//fmt.Printf("JP %X: %X\n", dest, b)
 	regs.pc = dest
-	CicleCounter += 16
+	return 16
 }
-func jp_nz_aabb(b uint8) {
+func jp_nz_aabb(b uint8) int{
 	var dest uint16 = read16bits(regs.pc)
 	//fmt.Printf("JP nz, %X: %X\n",dest, b)
 	regs.pc += 2
 	if !regs.getFlag(ZERO){
 		regs.pc = dest
-		CicleCounter += 16
-		return
+		return 16
 	}
-	CicleCounter += 12
-	//12 cicles
+	return 12
 }
-func pop_bc(b uint8) {
+func pop_bc(b uint8) int{
 	//fmt.Printf("POP bc: %X\n", b)
 	regs.bc_write(read16bits(regs.sp))
 	regs.sp += 2
-	CicleCounter += 12
+	return 12
 }
-func ret_nz(b uint8) {
+func ret_nz(b uint8) int{
 	//fmt.Printf("RET nz: %X\n", b)
 	if !regs.getFlag(ZERO) {
 		dest := read16bits(regs.sp)
 		regs.sp += 2
 		regs.pc = dest
-		CicleCounter += 20
-		return
+		return 20
 	}
-	CicleCounter += 8
+	return 8
 }
-func cp_x(b uint8) {
-	//fmt.Printf("CP x: %X\n", b)
+func cp_x(b uint8) int{
 	regs.setFlags(SUBTRACT)
 	var val uint8
+	var cicles int = 0
 	switch b{
 	case 0xB8:
+		//fmt.Printf("CP b: %X\n", b)
 		val = regs.b
 	case 0xB9:
+		//fmt.Printf("CP c: %X\n", b)
 		val = regs.c
 	case 0xBA:
+		//fmt.Printf("CP d: %X\n", b)
 		val = regs.d
 	case 0xBB:
+		//fmt.Printf("CP e: %X\n", b)
 		val = regs.e
 	case 0xBC:
+		//fmt.Printf("CP h: %X\n", b)
 		val = regs.h
 	case 0xBD:
+		//fmt.Printf("CP l: %X\n", b)
 		val = regs.l
 	case 0xBE:
+		//fmt.Printf("CP (hl): %X\n", b)
 		val = readByte(regs.hl_read())
-		CicleCounter += 4
+		cicles += 4
 	case 0xBF:
+		//fmt.Printf("CP a: %X\n", b)
 		val = regs.a 
 	}
 	if regs.a == val{
@@ -962,28 +968,36 @@ func cp_x(b uint8) {
 	} else{
 		regs.clearFlags(CARRY)
 	}
-	CicleCounter += 4
+	return cicles + 4
 }
-func or_x(b uint8) {
-	//fmt.Printf("OR x: %X\n", b)
+func or_x(b uint8) int{
+	var cicles int = 0
 	regs.clearFlags(SUBTRACT|HALFCARRY|CARRY)
 	switch b{
 	case 0xB0:
+		//fmt.Printf("OR b: %X\n", b)
 		regs.a |= regs.b
 	case 0xB1:
+		//fmt.Printf("OR c: %X\n", b)
 		regs.a |= regs.c
 	case 0xB2:
+		//fmt.Printf("OR d: %X\n", b)
 		regs.a |= regs.d
 	case 0xB3:
+		//fmt.Printf("OR e: %X\n", b)
 		regs.a |= regs.e
 	case 0xB4:
+		//fmt.Printf("OR h: %X\n", b)
 		regs.a |= regs.h
 	case 0xB5:
+		//fmt.Printf("OR l: %X\n", b)
 		regs.a |= regs.l
 	case 0xB6:
+		//fmt.Printf("OR (hl): %X\n", b)
 		regs.a |= readByte(regs.hl_read())
-		CicleCounter += 4
+		cicles += 4
 	case 0xB7:
+		//fmt.Printf("OR a: %X\n", b)
 		regs.a |= regs.a
 	}
 	if regs.a != 0{
@@ -991,28 +1005,36 @@ func or_x(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 4
+	return cicles + 4
 }
-func xor_x(b uint8) {
-	//fmt.Printf("XOR x: %X\n", b)
+func xor_x(b uint8) int{
+	var cicles int = 0
 	regs.clearFlags(SUBTRACT|HALFCARRY|CARRY)
 	switch b{
 	case 0xA8:
+		//fmt.Printf("XOR b: %X\n", b)
 		regs.a ^= regs.b
 	case 0xA9:
+		//fmt.Printf("XOR c: %X\n", b)
 		regs.a ^= regs.c
 	case 0xAA:
+		//fmt.Printf("XOR d: %X\n", b)
 		regs.a ^= regs.d
 	case 0xAB:
+		//fmt.Printf("XOR e: %X\n", b)
 		regs.a ^= regs.e
 	case 0xAC:
+		//fmt.Printf("XOR h: %X\n", b)
 		regs.a ^= regs.h
 	case 0xAD:
+		//fmt.Printf("XOR l: %X\n", b)
 		regs.a ^= regs.l
 	case 0xAE:
+		//fmt.Printf("XOR (hl): %X\n", b)
 		regs.a ^= readByte(regs.hl_read())
-		CicleCounter += 4
+		cicles += 4
 	case 0xAF:
+		//fmt.Printf("XOR a: %X\n", b)
 		regs.a ^= regs.a
 	}
 	if regs.a != 0{
@@ -1020,29 +1042,37 @@ func xor_x(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 4
+	return cicles + 4
 }
-func and_x(b uint8) {
-	//fmt.Printf("AND x: %X\n", b)
+func and_x(b uint8) int{
+	var cicles int = 0
 	regs.clearFlags(SUBTRACT|CARRY)
 	regs.setFlags(HALFCARRY)
 	switch b{
 	case 0xA0:
+		//fmt.Printf("AND b: %X\n", b)
 		regs.a &= regs.b
 	case 0xA1:
+		//fmt.Printf("AND c: %X\n", b)
 		regs.a &= regs.c
 	case 0xA2:
+		//fmt.Printf("AND d: %X\n", b)
 		regs.a &= regs.d
 	case 0xA3:
+		//fmt.Printf("AND e: %X\n", b)
 		regs.a &= regs.e
 	case 0xA4:
+		//fmt.Printf("AND h: %X\n", b)
 		regs.a &= regs.h
 	case 0xA5:
+		//fmt.Printf("AND l: %X\n", b)
 		regs.a &= regs.l
 	case 0xA6:
+		//fmt.Printf("AND (hl): %X\n", b)
 		regs.a &= readByte(regs.hl_read())
-		CicleCounter += 4
+		cicles += 4
 	case 0xA7:
+		//fmt.Printf("AND a: %X\n", b)
 		regs.a &= regs.a
 	}
 	if regs.a != 0{
@@ -1050,33 +1080,41 @@ func and_x(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 4
+	return cicles + 4
 }
-func sbc_a_x(b uint8) {
-	//fmt.Printf("SBC a, x: %X\n", b)
-	regs.setFlags(SUBTRACT)
+func sbc_a_x(b uint8) int{
+	var cicles int = 0
 	var val uint16
 	var carry uint16
+	regs.setFlags(SUBTRACT)
 	if regs.getFlag(CARRY){
 		carry = 1
 	}
 	switch b{
 	case 0x98:
+		//fmt.Printf("SBC a, b: %X\n", b)
 		val = uint16(regs.b)
 	case 0x99:
+		//fmt.Printf("SBC a, c: %X\n", b)
 		val = uint16(regs.c)
 	case 0x9A:
+		//fmt.Printf("SBC a, d: %X\n", b)
 		val = uint16(regs.d)
 	case 0x9B:
+		//fmt.Printf("SBC a, e: %X\n", b)
 		val = uint16(regs.e)
 	case 0x9C:
+		//fmt.Printf("SBC a, h: %X\n", b)
 		val = uint16(regs.h)
 	case 0x9D:
+		//fmt.Printf("SBC a, l: %X\n", b)
 		val = uint16(regs.l)
 	case 0x9E:
+		//fmt.Printf("SBC a, (hl): %X\n", b)
 		val = uint16(readByte(regs.hl_read()))
-		CicleCounter += 4
+		cicles += 4
 	case 0x9F:
+		//fmt.Printf("SBC a, a: %X\n", b)
 		val = uint16(regs.a) 
 	}
 	if (val + carry) > uint16(regs.a) {
@@ -1097,29 +1135,37 @@ func sbc_a_x(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 4
+	return cicles + 4
 }
-func sub_x(b uint8) {
-	//fmt.Printf("SUB x: %X\n", b)
-	regs.setFlags(SUBTRACT)
+func sub_x(b uint8) int{
+	var cicles int = 0
 	var val uint8
+	regs.setFlags(SUBTRACT)
 	switch b{
 	case 0x90:
+		//fmt.Printf("SUB b: %X\n", b)
 		val = regs.b
 	case 0x91:
+		//fmt.Printf("SUB c: %X\n", b)
 		val = regs.c
 	case 0x92:
+		//fmt.Printf("SUB d: %X\n", b)
 		val = regs.d
 	case 0x93:
+		//fmt.Printf("SUB e: %X\n", b)
 		val = regs.e
 	case 0x94:
+		//fmt.Printf("SUB h: %X\n", b)
 		val = regs.h
 	case 0x95:
+		//fmt.Printf("SUB l: %X\n", b)
 		val = regs.l
 	case 0x96:
+		//fmt.Printf("SUB (hl): %X\n", b)
 		val = readByte(regs.hl_read())
-		CicleCounter += 4
+		cicles += 4
 	case 0x97:
+		//fmt.Printf("SUB a: %X\n", b)
 		val = regs.a 
 	}
 	if val > regs.a {
@@ -1140,11 +1186,11 @@ func sub_x(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 4
+	return cicles + 4
 }
-func adc_a_x(b uint8) {
-	//fmt.Printf("ADC a, x: %X\n", b)
+func adc_a_x(b uint8) int{
 	regs.clearFlags(SUBTRACT)
+	var cicles int = 0
 	var result uint16 = 0
 	var tmp uint8
 	var carry uint16 = 0
@@ -1153,28 +1199,36 @@ func adc_a_x(b uint8) {
 	}
 	switch b{
 	case 0x88:
+		//fmt.Printf("ADC a, b: %X\n", b)
 		tmp = regs.b
 		result = uint16(regs.a) + uint16(regs.b) + carry
 	case 0x89:
+		//fmt.Printf("ADC a, c: %X\n", b)
 		tmp = regs.c
 		result = uint16(regs.a) + uint16(regs.c) + carry
 	case 0x8A:
+		//fmt.Printf("ADC a, d: %X\n", b)
 		tmp = regs.d
 		result = uint16(regs.a) + uint16(regs.d) + carry
 	case 0x8B:
+		//fmt.Printf("ADC a, e: %X\n", b)
 		tmp = regs.e
 		result = uint16(regs.a) + uint16(regs.e) + carry
 	case 0x8C:
+		//fmt.Printf("ADC a, h: %X\n", b)
 		tmp = regs.h
 		result = uint16(regs.a) + uint16(regs.h) + carry
 	case 0x8D:
+		//fmt.Printf("ADC a, l: %X\n", b)
 		tmp = regs.l
 		result = uint16(regs.a) + uint16(regs.l) + carry
 	case 0x8E:
+		//fmt.Printf("ADC a, (hl): %X\n", b)
 		tmp = readByte(regs.hl_read())
 		result = uint16(regs.a) + uint16(tmp) 	 + carry
-		CicleCounter += 4
+		cicles += 4
 	case 0x8F:
+		//fmt.Printf("ADC a, a: %X\n", b)
 		tmp = regs.a
 		result = uint16(regs.a) + uint16(regs.a) + carry
 	}
@@ -1196,37 +1250,45 @@ func adc_a_x(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 4
+	return cicles + 4
 }
-func add_a_x(b uint8) {
-	//fmt.Printf("ADD a, x: %X\n", b)
+func add_a_x(b uint8) int{
 	regs.clearFlags(SUBTRACT)
+	var cicles int = 0
 	var result uint32
 	var tmp uint8
 	switch b{
 	case 0x80:
+		//fmt.Printf("ADD a, b: %X\n", b)
 		tmp = regs.b
 		result = uint32(regs.a) + uint32(regs.b)
 	case 0x81:
+		//fmt.Printf("ADD a, c: %X\n", b)
 		tmp = regs.c
 		result = uint32(regs.a) + uint32(regs.c)
 	case 0x82:
+		//fmt.Printf("ADD a, d: %X\n", b)
 		tmp = regs.d
 		result = uint32(regs.a) + uint32(regs.d)
 	case 0x83:
+		//fmt.Printf("ADD a, e: %X\n", b)
 		tmp = regs.e
 		result = uint32(regs.a) + uint32(regs.e)
 	case 0x84:
+		//fmt.Printf("ADD a, h: %X\n", b)
 		tmp = regs.h
 		result = uint32(regs.a) + uint32(regs.h)
 	case 0x85:
+		//fmt.Printf("ADD a, l: %X\n", b)
 		tmp = regs.l
 		result = uint32(regs.a) + uint32(regs.l)
 	case 0x86:
+		//fmt.Printf("ADD a, (hl): %X\n", b)
 		tmp = readByte(regs.hl_read())
 		result = uint32(regs.a) + uint32(tmp)
-		CicleCounter += 4
+		cicles += 4
 	case 0x87:
+		//fmt.Printf("ADD a, a: %X\n", b)
 		tmp = regs.a
 		result = uint32(regs.a) + uint32(regs.a)
 	}
@@ -1248,19 +1310,21 @@ func add_a_x(b uint8) {
 	} else{
 		regs.setFlags(ZERO)
 	}
-	CicleCounter += 4
+	return cicles + 4
 }
-func halt(b uint8) {
+func halt(b uint8) int{
 	//fmt.Printf("HALT: %X\n", b)
 	halted = true
-	CicleCounter += 4
+	return 4
 }
-func ld_phl_a(b uint8) {
+func ld_phl_a(b uint8) int{
 	//fmt.Printf("LD (hl), a: %X\n", b)
 	writeByte(regs.hl_read(), regs.a)
-	CicleCounter += 8
+	return 8
 }
-func ld_x_y(b uint8) {
+func ld_x_y(b uint8) int{
+	//fmt.Printf("ld x, y: %X\n", b)
+	var cicles int = 0
 	switch b{
 	case 0x40:
 		regs.b = regs.b
@@ -1281,7 +1345,7 @@ func ld_x_y(b uint8) {
 		//4 cicles
 	case 0x46:
 		regs.b = readByte(regs.hl_read())
-		CicleCounter += 4
+		cicles += 4
 	case 0x47:
 		regs.b = regs.a
 		//4 cicles
@@ -1304,7 +1368,7 @@ func ld_x_y(b uint8) {
 		//4 cicles
 	case 0x4E:
 		regs.c = readByte(regs.hl_read())
-		CicleCounter += 4
+		cicles += 4
 	case 0x4F:
 		regs.c = regs.a
 		//4 cicles
@@ -1328,7 +1392,7 @@ func ld_x_y(b uint8) {
 		//4 cicles
 	case 0x56:
 		regs.d = readByte(regs.hl_read())
-		CicleCounter += 4
+		cicles += 4
 	case 0x57:
 		regs.d = regs.a
 		//4 cicles
@@ -1352,7 +1416,7 @@ func ld_x_y(b uint8) {
 		//4 cicles
 	case 0x5E:
 		regs.e = readByte(regs.hl_read())
-		CicleCounter += 4
+		cicles += 4
 	case 0x5F:
 		regs.e = regs.a
 		//4 cicles
@@ -1376,7 +1440,7 @@ func ld_x_y(b uint8) {
 		//4 cicles
 	case 0x66:
 		regs.h = readByte(regs.hl_read())
-		CicleCounter += 4
+		cicles += 4
 	case 0x67:
 		regs.h = regs.a
 		//4 cicles
@@ -1400,28 +1464,28 @@ func ld_x_y(b uint8) {
 		//4 cicles
 	case 0x6E:
 		regs.l = readByte(regs.hl_read())
-		CicleCounter += 4
+		cicles += 4
 	case 0x6F:
 		regs.l = regs.a
 		//4 cicles
 	case 0x70:
 		writeByte(regs.hl_read(), regs.b)
-		CicleCounter += 4
+		cicles += 4
 	case 0x71:
 		writeByte(regs.hl_read(), regs.c)
-		CicleCounter += 4
+		cicles += 4
 	case 0x72:
 		writeByte(regs.hl_read(), regs.d)
-		CicleCounter += 4
+		cicles += 4
 	case 0x73:
 		writeByte(regs.hl_read(), regs.e)
-		CicleCounter += 4
+		cicles += 4
 	case 0x74:
 		writeByte(regs.hl_read(), regs.h)
-		CicleCounter += 4
+		cicles += 4
 	case 0x75:
 		writeByte(regs.hl_read(), regs.l)
-		CicleCounter += 4
+		cicles += 4
 	case 0x78:
 		regs.a = regs.b
 		//4 cicles
@@ -1442,31 +1506,31 @@ func ld_x_y(b uint8) {
 		//4 cicles
 	case 0x7E:
 		regs.a = readByte(regs.hl_read())
-		CicleCounter += 4
+		cicles += 4
 	case 0x7F:
 		regs.a = regs.a
 		//4 cicles
 	}
-	CicleCounter += 4
+	return cicles + 4
 }
-func ld_sp_aabb(b uint8){
-	//fmt.Printf("LD sp, $aabb: %X\n", b)
+func ld_sp_aabb(b uint8) int{
 	regs.sp = read16bits(regs.pc)
 	regs.pc += 2
-	CicleCounter += 12
+	//fmt.Printf("ADD a, %X: %X\n", regs.sp, b)
+	return 12
 }
-func ld_hld_a(b uint8){
+func ld_hld_a(b uint8) int{
 	//fmt.Printf("LDD (hl), a: %X\n", b)
 	writeByte(regs.hl_read(), regs.a)
 	regs.hl_write(regs.hl_read()-1)
-	CicleCounter += 8
+	return 8
 }
-func inc_sp(b uint8){
+func inc_sp(b uint8) int{
 	//fmt.Printf("INC sp: %X\n", b)
 	regs.sp++
-	CicleCounter += 8
+	return 8
 }
-func inc_bhl(b uint8){
+func inc_bhl(b uint8) int{
 	//fmt.Printf("INC hl: %X\n", b)
 	var data uint8 = readByte(regs.hl_read())
 	if (data & 0x0F) == 0x0F{
@@ -1484,9 +1548,9 @@ func inc_bhl(b uint8){
 		regs.clearFlags(ZERO)
 	}
 	regs.clearFlags(SUBTRACT)
-	CicleCounter += 12
+	return 12
 }
-func dec_bhl(b uint8){
+func dec_bhl(b uint8) int{
 	//fmt.Printf("DEC hl: %X\n", b)
 	var data uint8 = readByte(regs.hl_read())
 	if (data & 0x0F) == 0{
@@ -1504,32 +1568,32 @@ func dec_bhl(b uint8){
 		regs.clearFlags(ZERO)
 	}
 	regs.setFlags(SUBTRACT)
-	CicleCounter += 12
+	return 12
 }
-func ld_hl_xx(b uint8){
-	//fmt.Printf("LD hl, $xx: %X\n", b)
-	writeByte(regs.hl_read(), readByte(regs.pc))
+func ld_hl_xx(b uint8) int{
+	val := readByte(regs.pc)
+	writeByte(regs.hl_read(), val)
 	regs.pc++
-	CicleCounter += 12
+	//fmt.Printf("LD hl, %X: %X\n", val, b)
+	return 12
 }
-func scf(b uint8){
+func scf(b uint8) int{
 	//fmt.Printf("SCF: %X\n",b)
 	regs.setFlags(CARRY)
 	regs.clearFlags(SUBTRACT|HALFCARRY)
-	CicleCounter += 4
+	return 4
 }
-func jr_c_xx(b uint8){
-	//fmt.Printf("JR c, $xx: %X\n", b)
+func jr_c_xx(b uint8) int{
 	var dest int8 = int8(readByte(regs.pc))
 	regs.pc++
+	//fmt.Printf("JR c, %X: %X\n", dest, b)
 	if regs.getFlag(CARRY) {
 		regs.pc = uint16(int16(regs.pc) + int16(dest))
-		CicleCounter += 12
-		return
+		return 12
 	}
-	CicleCounter += 8
+	return 8
 }
-func add_hl_sp(b uint8){
+func add_hl_sp(b uint8) int{
 	//fmt.Printf("ADD HL, SP: %X\n", b)
 	regs.clearFlags(SUBTRACT)
 	var result uint32 = uint32(regs.hl_read()) + uint32(regs.sp)
@@ -1545,20 +1609,20 @@ func add_hl_sp(b uint8){
 		regs.clearFlags(HALFCARRY)
 	}
 	regs.hl_write(uint16(0x00FFFF&result))
-	CicleCounter +=  8
+	return 8
 }
-func ld_a_hld(b uint8){
+func ld_a_hld(b uint8) int{
 	//fmt.Printf("LDD a, hl: %X\n", b)
 	regs.a = readByte(regs.hl_read())
 	regs.hl_write(regs.hl_read()-1)
-	CicleCounter += 8
+	return 8
 }
-func dec_sp(b uint8){
+func dec_sp(b uint8) int{
 	//fmt.Printf("DEC sp: %X\n", b)
 	regs.sp--
-	CicleCounter += 8
+	return 8
 }
-func inc_a(b uint8){
+func inc_a(b uint8) int{
 	//fmt.Printf("INC a: %X\n", b)
 	if (regs.a & 0x0F) == 0x0F{
 		regs.setFlags(HALFCARRY)
@@ -1574,9 +1638,9 @@ func inc_a(b uint8){
 		regs.clearFlags(ZERO)
 	}
 	regs.clearFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
-func dec_a(b uint8){
+func dec_a(b uint8) int{
 	//fmt.Printf("DEC a: %X\n", b)
 	if (regs.a & 0x0F) == 0{
 		regs.setFlags(HALFCARRY)
@@ -1592,15 +1656,15 @@ func dec_a(b uint8){
 		regs.clearFlags(ZERO)
 	}
 	regs.setFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
-func ld_a_xx(b uint8){
-	//fmt.Printf("LD a, $xx: %X\n", b)
+func ld_a_xx(b uint8) int{
 	regs.a = readByte(regs.pc)
 	regs.pc++
-	CicleCounter += 8
+	//fmt.Printf("LD a, %X: %X\n", regs.a, b)
+	return 8
 }
-func ccf(b uint8){
+func ccf(b uint8) int{
 	//fmt.Printf("CCF: %X\n",b)
 	regs.clearFlags(SUBTRACT|HALFCARRY)
 	if regs.getFlag(CARRY) {
@@ -1608,32 +1672,31 @@ func ccf(b uint8){
 	} else{
 		regs.setFlags(CARRY)
 	}
-	CicleCounter += 4
+	return 4
 } 
-func jr_nc_xx(b uint8) {
-	//fmt.Printf("JR nc, $xx: %X\n", b)
+func jr_nc_xx(b uint8) int{
 	var dest int8 = int8(readByte(regs.pc))
 	regs.pc++
+	//fmt.Printf("JR nc, %X: %X\n", dest, b)
 	if !regs.getFlag(CARRY) {
 		regs.pc = uint16(int16(regs.pc) + int16(dest))
-		CicleCounter += 12
-		return
+		return 12
 	}
-	CicleCounter += 8
+	return 8
 }
-func cpl(b uint8) {
+func cpl(b uint8) int{
 	//fmt.Printf("CPL: %X\n", b)
 	regs.setFlags(SUBTRACT|HALFCARRY)
 	regs.a = ^regs.a 
-	CicleCounter += 4
+	return 4
 }
-func ld_l_xx(b uint8) {
-	//fmt.Printf("LD l, xx: %X\n", b)
+func ld_l_xx(b uint8) int{
 	regs.l = readByte(regs.pc)
 	regs.pc++
-	CicleCounter += 8
+	//fmt.Printf("LD l, %X: %X\n",regs.l, b)
+	return 8
 }
-func dec_l(b uint8) {
+func dec_l(b uint8) int{
 	//fmt.Printf("DEC l: %X\n", b)
 	if (regs.l & 0x0F) == 0{
 		regs.setFlags(HALFCARRY)
@@ -1649,9 +1712,9 @@ func dec_l(b uint8) {
 		regs.clearFlags(ZERO)
 	}
 	regs.setFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
-func inc_l(b uint8) {
+func inc_l(b uint8) int{
 	//fmt.Printf("INC l: %X\n", b)
 	if (regs.l & 0x0F) == 0x0F{
 		regs.setFlags(HALFCARRY)
@@ -1667,20 +1730,20 @@ func inc_l(b uint8) {
 		regs.clearFlags(ZERO)
 	}
 	regs.clearFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
-func dec_hl(b uint8) {
+func dec_hl(b uint8) int{
 	//fmt.Printf("DEC hl: %X\n", b)
 	regs.hl_write(regs.hl_read() - 1)
-	CicleCounter += 8
+	return 8
 }
-func ld_a_hli(b uint8) {
+func ld_a_hli(b uint8) int{
 	//fmt.Printf("LDI a, (hl): %X\n", b)
 	regs.a = readByte(regs.hl_read())
 	regs.hl_write(regs.hl_read()+1)
-	CicleCounter += 8
+	return 8
 }
-func add_hl_hl(b uint8) {
+func add_hl_hl(b uint8) int{
 	//fmt.Printf("ADD HL, HL: %X\n", b)
 	regs.clearFlags(SUBTRACT)
 	var result uint32 = uint32(regs.hl_read()) + uint32(regs.hl_read())
@@ -1696,20 +1759,19 @@ func add_hl_hl(b uint8) {
 		regs.clearFlags(HALFCARRY)
 	}
 	regs.hl_write(uint16(result))
-	CicleCounter += 8
+	return 8
 }
-func jr_z_xx(b uint8) {
-	//fmt.Printf("JR z, $xx: %X\n", b)
+func jr_z_xx(b uint8) int{
 	var dest int8 = int8(readByte(regs.pc))
 	regs.pc++
+	//fmt.Printf("JR z, %X: %X\n", dest, b)
 	if regs.getFlag(ZERO) {
 		regs.pc = uint16(int16(regs.pc) + int16(dest))
-		CicleCounter += 12
-		return
+		return 12
 	}
-	CicleCounter += 8
+	return 8
 }
-func daa(b uint8) {
+func daa(b uint8) int{
 	//fmt.Printf("DAA: %X\n", b)
 	var tmp uint16 = uint16(regs.a)
 	if regs.getFlag(SUBTRACT) {
@@ -1737,15 +1799,15 @@ func daa(b uint8) {
 		regs.setFlags(ZERO)
 	}
 	regs.clearFlags(HALFCARRY)
-	CicleCounter += 4
+	return 4
 }
-func ld_h_xx(b uint8) {
-	//fmt.Printf("LD h, xx: %X\n", b)
+func ld_h_xx(b uint8) int{
 	regs.h = readByte(regs.pc)
 	regs.pc++
-	CicleCounter += 8
+	//fmt.Printf("LD h, %X: %X\n",regs.h, b)
+	return 8
 }
-func dec_h(b uint8) {
+func dec_h(b uint8) int{
 	//fmt.Printf("DEC h: %X\n", b)
 	if (regs.h & 0x0F) == 0{
 		regs.setFlags(HALFCARRY)
@@ -1761,9 +1823,9 @@ func dec_h(b uint8) {
 		regs.clearFlags(ZERO)
 	}
 	regs.setFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
-func inc_h(b uint8) {
+func inc_h(b uint8) int{
 	//fmt.Printf("INC h: %X\n", b)
 	if (regs.h & 0x0F) == 0x0F{
 		regs.setFlags(HALFCARRY)
@@ -1779,37 +1841,36 @@ func inc_h(b uint8) {
 		regs.clearFlags(ZERO)
 	}
 	regs.clearFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
-func inc_hl(b uint8) {
+func inc_hl(b uint8) int{
 	//fmt.Printf("INC hl: %X\n", b)
 	regs.hl_write(regs.hl_read() + 1)
-	CicleCounter += 8
+	return 8
 }
-func ld_hli_a(b uint8) {
+func ld_hli_a(b uint8) int{
 	//fmt.Printf("LDI hl, a: %X\n", b)
 	writeByte(regs.hl_read(), regs.a)
 	regs.hl_write(regs.hl_read()+1)
-	CicleCounter += 8
+	return 8
 }
-func ld_hl_aabb(b uint8) {
-	//fmt.Printf("LD hl, $aabb: %X\n", b)
+func ld_hl_aabb(b uint8) int{
 	regs.hl_write(read16bits(regs.pc))
 	regs.pc += 2
-	CicleCounter += 12
+	//fmt.Printf("LD hl, %X: %X\n", regs.hl_read(), b)
+	return 12
 }
-func jr_nz_xx(b uint8) {
+func jr_nz_xx(b uint8) int{
 	var dest int8 = int8(readByte(regs.pc))
-	//fmt.Printf("JR nz, %d: %X\n",dest, b)
 	regs.pc++
+	//fmt.Printf("JR nz, %d: %X\n",dest, b)
 	if !regs.getFlag(ZERO) {
 		regs.pc = uint16(int16(regs.pc) + int16(dest))
-		CicleCounter += 12
-		return
+		return 12
 	}
-	CicleCounter += 8
+	return 8
 }
-func rra(b uint8) {
+func rra(b uint8) int{
 	//fmt.Printf("RRA: %X\n", b)
 	regs.clearFlags(SUBTRACT|HALFCARRY|ZERO)
 	var carry uint8 = 0
@@ -1824,15 +1885,15 @@ func rra(b uint8) {
 
 	regs.a = (regs.a >> 1) | carry
 
-	CicleCounter += 4
+	return 4
 }
-func ld_e_xx(b uint8) {
+func ld_e_xx(b uint8) int{
 	//fmt.Printf("LD e, xx: %X\n", b)
 	regs.e = readByte(regs.pc)
 	regs.pc++
-	CicleCounter += 8
+	return 8
 }
-func dec_e(b uint8) {
+func dec_e(b uint8) int{
 	//fmt.Printf("DEC e: %X\n", b)
 	if (regs.e & 0x0F) == 0{
 		regs.setFlags(HALFCARRY)
@@ -1848,9 +1909,9 @@ func dec_e(b uint8) {
 		regs.clearFlags(ZERO)
 	}
 	regs.setFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
-func inc_e(b uint8) {
+func inc_e(b uint8) int{
 	//fmt.Printf("INC e: %X\n", b)
 	if (regs.e & 0x0F) == 0x0F{
 		regs.setFlags(HALFCARRY)
@@ -1866,19 +1927,19 @@ func inc_e(b uint8) {
 		regs.clearFlags(ZERO)
 	}
 	regs.clearFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
-func dec_de(b uint8) {
+func dec_de(b uint8) int{
 	//fmt.Printf("DEC de: %X\n", b)
 	regs.de_write(regs.de_read() - 1)
-	CicleCounter += 8
+	return 8
 }
-func ld_a_de(b uint8) {
+func ld_a_de(b uint8) int{
 	//fmt.Printf("LD a, (de): %X\n", b)
 	regs.a = readByte(regs.de_read())
-	CicleCounter += 8
+	return 8
 }
-func add_hl_de(b uint8) {
+func add_hl_de(b uint8) int{
 	//fmt.Printf("ADD HL, DE: %X\n", b)
 	regs.clearFlags(SUBTRACT)
 	var result uint32 = uint32(regs.hl_read()) + uint32(regs.de_read())
@@ -1894,16 +1955,16 @@ func add_hl_de(b uint8) {
 		regs.clearFlags(HALFCARRY)
 	}
 	regs.hl_write(uint16(result & 0x00FFFF))
-	CicleCounter += 8
+	return 8
 }
-func jr_xx(b uint8) {
+func jr_xx(b uint8) int{
 	var dest int8 = int8(readByte(regs.pc))
 	regs.pc++
 	//fmt.Printf("JR %X: %X\n",b,b)
 	regs.pc = uint16(int16(regs.pc) + int16(dest))
-	CicleCounter += 12
+	return 12
 }
-func rla(b uint8) {
+func rla(b uint8) int{
 	//fmt.Printf("RLA: %X\n", b)
 	regs.clearFlags(SUBTRACT|HALFCARRY|ZERO)
 	var carry uint8 = 0
@@ -1916,15 +1977,15 @@ func rla(b uint8) {
 		regs.clearFlags(CARRY)
 	}
 	regs.a = (regs.a << 1) | carry
-	CicleCounter += 4
+	return 4
 }
-func ld_d_xx(b uint8) {
+func ld_d_xx(b uint8) int{
 	//fmt.Printf("LD d, xx: %X\n", b)
 	regs.d = readByte(regs.pc)
 	regs.pc++
-	CicleCounter += 8
+	return 8
 }
-func dec_d(b uint8) {
+func dec_d(b uint8) int{
 	//fmt.Printf("DEC d: %X\n", b)
 	if (regs.d & 0x0F) == 0{
 		regs.setFlags(HALFCARRY)
@@ -1940,9 +2001,9 @@ func dec_d(b uint8) {
 		regs.clearFlags(ZERO)
 	}
 	regs.setFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
-func inc_d(b uint8) {
+func inc_d(b uint8) int{
 	//fmt.Printf("INC d: %X\n", b)
 	if (regs.d & 0x0F) == 0x0F{
 		regs.setFlags(HALFCARRY)
@@ -1958,30 +2019,30 @@ func inc_d(b uint8) {
 		regs.clearFlags(ZERO)
 	}
 	regs.clearFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
-func inc_de(b uint8) {
+func inc_de(b uint8) int{
 	//fmt.Printf("INC de: %X\n", b)
 	regs.de_write(regs.de_read() + 1)
-	CicleCounter += 8
+	return 8
 }
-func ld_de_a(b uint8) {
+func ld_de_a(b uint8) int{
 	//fmt.Printf("LD (de), a: %X\n", b)
 	writeByte(regs.de_read(), regs.a)
-	CicleCounter += 8
+	return 8
 }
-func ld_de_aabb(b uint8) {
+func ld_de_aabb(b uint8) int{
 	//fmt.Printf("LD de, $aabb: %X\n", b)
 	regs.de_write(read16bits(regs.pc))
 	regs.pc += 2
-	CicleCounter += 12
+	return 12
 }
-func stop(b uint8) {
+func stop(b uint8) int{
 	//fmt.Printf("TODO-STOP : %X\n", b)
 	regs.pc++
-	CicleCounter += 4
+	return 4
 }
-func rrca(b uint8) {
+func rrca(b uint8) int{
 	//fmt.Printf("RRCA: %X\n", b)
 	if (regs.a & 0x01) == 0x01 {
 		regs.setFlags(CARRY)
@@ -1991,15 +2052,15 @@ func rrca(b uint8) {
 	regs.a = (regs.a >> 1) | (regs.a << 7)
 	
 	regs.clearFlags(SUBTRACT|HALFCARRY|ZERO)
-	CicleCounter += 4
+	return 4
 }
-func ld_c_xx(b uint8) {
+func ld_c_xx(b uint8) int{
 	//fmt.Printf("LD c, $xx: %X\n", b)
 	regs.c = readByte(regs.pc)
 	regs.pc++
-	CicleCounter += 8
+	return 8
 }
-func dec_c(b uint8) {
+func dec_c(b uint8) int{
 	//fmt.Printf("DEC c: %X\n", b)
 	if (regs.c & 0x0F) == 0{
 		regs.setFlags(HALFCARRY)
@@ -2015,9 +2076,9 @@ func dec_c(b uint8) {
 		regs.clearFlags(ZERO)
 	}
 	regs.setFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
-func inc_c(b uint8) {
+func inc_c(b uint8) int{
 	//fmt.Printf("INC c: %X\n", b)
 	if (regs.c & 0x0F) == 0x0F{
 		regs.setFlags(HALFCARRY)
@@ -2033,38 +2094,39 @@ func inc_c(b uint8) {
 		regs.clearFlags(ZERO)
 	}
 	regs.clearFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
 //-----------------------
-func unknown(b uint8) {
+func unknown(b uint8) int{
 	//fmt.Printf("UNKNOWN: %X\n", b)
+	return 0
 }
-
-func nop(op uint8) {
+//0x00
+func nop(op uint8) int{
 	//fmt.Printf("NOP: %X\n",op)
-	CicleCounter += 4
+	return 4
 }
-
-func ld_bc_aabb(b uint8) {
-	//fmt.Printf("LD bc, $aabb: %X\n", b)
+//0x01
+func ld_bc_aabb(b uint8) int{
+	//fmt.Printf("LD bc, %X: %X\n",read16bits(regs.pc), b)
 	regs.bc_write(read16bits(regs.pc))
 	regs.pc += 2
-	CicleCounter += 12
+	return 12
 }
-
-func ld_bc_a(b uint8) {
+//0x02
+func ld_bc_a(b uint8) int{
 	//fmt.Printf("LD (bc), a: %X\n", b)
 	writeByte(regs.bc_read(), regs.a)
-	CicleCounter += 8
+	return 8
 }
-
-func inc_bc(b uint8) {
+//0x03
+func inc_bc(b uint8) int{
 	//fmt.Printf("INC bc: %X\n", b)
 	regs.bc_write(regs.bc_read() + 1)
-	CicleCounter += 8
+	return 8
 }
-
-func inc_b(b uint8) {
+//0x04
+func inc_b(b uint8) int{
 	//fmt.Printf("INC b: %X\n", b)
 	if (regs.b & 0x0F) == 0x0F{
 		regs.setFlags(HALFCARRY)
@@ -2080,10 +2142,10 @@ func inc_b(b uint8) {
 		regs.clearFlags(ZERO)
 	}
 	regs.clearFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
 
-func dec_b(b uint8) {
+func dec_b(b uint8) int{
 	//fmt.Printf("DEC b: %X\n", b)
 	if (regs.b & 0x0F) == 0{
 		regs.setFlags(HALFCARRY)
@@ -2099,15 +2161,15 @@ func dec_b(b uint8) {
 		regs.clearFlags(ZERO)
 	}
 	regs.setFlags(SUBTRACT)
-	CicleCounter += 4
+	return 4
 }
-func ld_b_xx(b uint8) {
+func ld_b_xx(b uint8) int{
 	//fmt.Printf("LD b, $xx: %X\n", b)
 	regs.b = readByte(regs.pc)
 	regs.pc++
-	CicleCounter += 8
+	return 8
 }
-func rlca(b uint8) {
+func rlca(b uint8) int{
 	//fmt.Printf("RLCA: %X\n", b)
 	if (regs.a & 0x80) == 0x80 {
 			regs.setFlags(CARRY)
@@ -2117,16 +2179,16 @@ func rlca(b uint8) {
 	regs.a = ((regs.a << 1) | (regs.a >> 7))
 
 	regs.clearFlags(SUBTRACT|HALFCARRY|ZERO)
-	CicleCounter += 4
+	return 4
 }
-func ld_aabb_sp(b uint8) {
+func ld_aabb_sp(b uint8) int{
 	var addr uint16 = read16bits(regs.pc)
 	//fmt.Printf("LD (%X), sp: %X\n", addr, b)
 	regs.pc += 2
 	write16bits(addr, regs.sp)
-	CicleCounter += 20
+	return 20
 }
-func add_hl_bc(b uint8) {
+func add_hl_bc(b uint8) int{
 	//fmt.Printf("ADD HL, BC: %X\n", b)
 	regs.clearFlags(SUBTRACT)
 	var result uint32 = uint32(regs.hl_read()) + uint32(regs.bc_read())
@@ -2142,16 +2204,16 @@ func add_hl_bc(b uint8) {
 		regs.clearFlags(HALFCARRY)
 	}
 	regs.hl_write(uint16(result))
-	CicleCounter += 8
+	return 8
 }
-func ld_a_bc(b uint8) {
+func ld_a_bc(b uint8) int{
 	//fmt.Printf("LD a, (bc): %X\n", b)
 	regs.a = readByte(regs.bc_read())
-	CicleCounter += 8
+	return 8
 }
-func dec_bc(b uint8) {
+func dec_bc(b uint8) int{
 	//fmt.Printf("DEC bc: %X\n", b)
 	regs.bc_write(regs.bc_read() - 1)
-	CicleCounter += 8
+	return 8
 }
 

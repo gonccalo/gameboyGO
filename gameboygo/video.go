@@ -19,7 +19,7 @@ const(
 	WIDTH		int   = 160
 	HEIGHT		int   = 144
 	PITCH   	int   = WIDTH * 4
-	BUFFER_SIZE int   = WIDTH*HEIGHT*4
+	BUFFER_SIZE int   = (WIDTH)*(HEIGHT)*4
 )
 var colors = [4]uint8 {WHITE,		//00
 					   LIGHT_GRAY,	//01
@@ -95,12 +95,13 @@ ram[0xFF49]
 This register assigns gray shades for sprite palette 1. It works exactly as BGP (FF47), except that the lower two bits aren't used because sprite data 00 is transparent.
 */
 
-var LastScanLine int = 0
-func UpdateGPU(renderer *sdl.Renderer, tex *sdl.Texture) {
+var ciclesVideo int = 0
+func UpdateGPU(renderer *sdl.Renderer, tex *sdl.Texture, cicles int) {
+	ciclesVideo += cicles
 	if (*LcdControl & 0x80) == 0{
 		//display off
 		//must clean Ly and set mode 1
-		LastScanLine = 0
+		ciclesVideo = 0
 		*Ly = 0
 		setLcdStatMode(LCD_STAT_VBLANK)
 		return
@@ -112,16 +113,14 @@ func UpdateGPU(renderer *sdl.Renderer, tex *sdl.Texture) {
 		}
 		setLcdStatMode(LCD_STAT_VBLANK)
 	} else{
-		//maybe i should redo all this CicleCounter thing
-		var modeCicles = CicleCounter % SCAN_CICLES
-		if modeCicles < 80{
+		if ciclesVideo < 80{
 			//mode 2: 80 cicles of the 456
 			if ((*LcdStatus & 0x20) != 0) && ((*LcdStatus & 0x03) != LCD_STAT_OAM_RAM) {
 				//if this interrupt is enabled and just changed mode
 				setInterruptsFlag(LCD_STAT)
 			}
 			setLcdStatMode(LCD_STAT_OAM_RAM)
-		} else if modeCicles < (80 + 172) {
+		} else if ciclesVideo < (80 + 172) {
 			//mode 3: 172 cicles of the 456
 			setLcdStatMode(LCD_STAT_DATA2DRIVER)
 		} else{
@@ -143,9 +142,9 @@ func UpdateGPU(renderer *sdl.Renderer, tex *sdl.Texture) {
 	} else{
 		*LcdStatus &= 0xFB
 	}
-	if (int(CicleCounter/SCAN_CICLES) - LastScanLine) >= 1{ 
+	if ciclesVideo >= SCAN_CICLES{
+		ciclesVideo = 0 
 		//next scanline
-		LastScanLine = int(CicleCounter/SCAN_CICLES)
 		*Ly += 1
 		if *Ly == 144 { 
 			//VBLANK 
@@ -270,6 +269,9 @@ func DrawLine(renderer *sdl.Renderer) {
 				color := getPixelColor(data0, data1, bit, palette)
 				if color == WHITE{
 					//the white color in sprites is transparent
+					continue
+				}
+				if (spriteX + ((^Xpixel)&0x07)) > 160 {
 					continue
 				}
 				pos :=  (int(*Ly)*WIDTH*4) + (int(spriteX) + int((^Xpixel)&0x07)) * 4
