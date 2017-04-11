@@ -1,5 +1,4 @@
 package main
-import "fmt"
 var(
 	ciclesThisUpdate int
 	tfreq 			 int
@@ -38,7 +37,7 @@ func incTimer(cicles int) {
 			if ram[0xFF05] == 255 {
 				ram[0xFF05] = ram[0xFF06]
 				setInterruptsFlag(TIMER)
-				fmt.Println("TIMER INTERRUPT")
+				//fmt.Println("TIMER INTERRUPT")
 			}
 		}
 	}

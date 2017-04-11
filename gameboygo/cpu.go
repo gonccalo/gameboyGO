@@ -279,8 +279,6 @@ var ops = [0x100]operations{
 var (
 	regs 		 registers
 	halted 		 bool
-	LastTimer 	 int
-	LastDivTimer int
 	CicleCounter int
 	cicles_op	 int
 	ime  		 bool
@@ -292,7 +290,6 @@ func Reset() {
 	cicles_op    = 0
 	ime = true
 	halted = false
-	LastTimer = 0
 	regs.a = 0x01
 	regs.f = 0xB0
 	regs.b = 0x00

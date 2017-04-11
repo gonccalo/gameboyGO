@@ -103,7 +103,7 @@ func UpdateGPU(renderer *sdl.Renderer, tex *sdl.Texture, cicles int) {
 		//must clean Ly and set mode 1
 		ciclesVideo = 0
 		*Ly = 0
-		setLcdStatMode(LCD_STAT_VBLANK)
+		setLcdStatMode(LCD_STAT_HBLANK)
 		return
 	}
 	if *Ly >= 144 {
