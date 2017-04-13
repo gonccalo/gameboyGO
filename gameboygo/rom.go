@@ -44,6 +44,10 @@ const(
 )
 
 var Head rom_header
+var RomData []uint8
+var bankMode uint8
+var romBank uint8
+var ramBank uint8
 
 func (h *rom_header) init(data []byte){
 	h.title = string(data[0x0134:0x143])
@@ -54,30 +58,31 @@ func (h *rom_header) init(data []byte){
 	h.header_checksum = data[0x14D]
 }
 func Load_rom(filename string) {
-	data, err := ioutil.ReadFile(filename)
+	var err error
+	RomData, err = ioutil.ReadFile(filename)
 	if err != nil {
 		panic(err)
 	}
-	Head.init(data)
+	Head.init(RomData)
 	
-	if num := copy(ram[:0x4000], data[:0x4000]); num != 0x4000 {
+	if num := copy(ram[:0x4000], RomData[:0x4000]); num != 0x4000 {
 		fmt.Printf("ERRO copiados: %d", num)
 		return
 	}
 	switch Head.cart_type{
 	case ROM_ONLY:
-		if num := copy(ram[0x4000:0x8000], data[0x4000:]); num != 0x4000{
+		if num := copy(ram[0x4000:0x8000], RomData[0x4000:]); num != 0x4000{
 			fmt.Printf("ERRO no bankn, copiados %d\n", num)
 			return
 		}
 	case ROM_MBC1:
-		if num := copy(ram[0x4000:0x8000], data[0x4000:]); num != 0x4000{
-			fmt.Printf("ERRO no bankn, copiados %d\n", num)
+		if num := copy(ram[0x4000:0x8000], RomData[0x4000:0x8000]); num != 0x4000{
+			fmt.Printf("ERRO no bank, copiados %d\n", num)
 			return
 		}
 	default:
-		if num := copy(ram[0x4000:0x8000], data[0x4000:]); num != 0x4000{
-			fmt.Printf("ERRO no bankn, copiados %d\n", num)
+		if num := copy(ram[0x4000:0x8000], RomData[0x4000:0x8000]); num != 0x4000{
+			fmt.Printf("ERRO no bank, copiados %d\n", num)
 			return
 		}
 	}
@@ -85,4 +90,42 @@ func Load_rom(filename string) {
 	//fmt.Printf("%T\n",ram[0x4000:])
 	return
 
+}
+
+func changeLRomBank(num uint8) {
+	if Head.cart_type == ROM_MBC1 || Head.cart_type == ROM_MBC1_RAM_BATT || Head.cart_type == ROM_MBC1_RAM{
+		romBank = romBank & 0xE0
+		romBank = romBank | (num & 0x1F)
+		if romBank == 0 {
+			romBank = 1
+		}
+		if num := copy(ram[0x4000:0x8000], RomData[0x4000 * uint32(romBank):0x4000 * (uint32(romBank) + 1)]); num != 0x4000{
+			fmt.Printf("ERRO no bank, copiados %d\n", num)
+			return
+		}
+	}
+}
+func changeHRomOrRamBank(num uint8) {
+	if Head.cart_type == ROM_MBC1 || Head.cart_type == ROM_MBC1_RAM_BATT || Head.cart_type == ROM_MBC1_RAM{
+		if bankMode == 0{
+			romBank = romBank & 0x1F
+			romBank = romBank | ((num&0x03)<<5)
+			if romBank == 0 {
+				romBank = 1
+			}
+			if num := copy(ram[0x4000:0x8000], RomData[0x4000 * uint32(romBank):0x4000 * (uint32(romBank) + 1)]); num != 0x4000{
+				fmt.Printf("ERRO no bank, copiados %d\n", num)
+				return
+			}
+		} else if bankMode == 1 {
+			ramBank = num & 0x03
+		}
+	}
+}
+func changeRomRamMode(b uint8) {
+	if (b & 0x01) == 0 {
+		bankMode = 0
+	} else{
+		bankMode = 1
+	}
 }

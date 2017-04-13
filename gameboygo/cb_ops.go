@@ -1,5 +1,5 @@
 package main
-//import "fmt"
+//import "//fmt"
 var cb_op = [0x100]operations{
 	rlc_b,		//0x00
 	rlc_c,		//0x01

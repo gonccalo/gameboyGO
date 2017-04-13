@@ -271,7 +271,7 @@ func DrawLine(renderer *sdl.Renderer) {
 					//the white color in sprites is transparent
 					continue
 				}
-				if (spriteX + ((^Xpixel)&0x07)) > 160 {
+				if (int(spriteX) + int((^Xpixel)&0x07)) >= 160 {
 					continue
 				}
 				pos :=  (int(*Ly)*WIDTH*4) + (int(spriteX) + int((^Xpixel)&0x07)) * 4

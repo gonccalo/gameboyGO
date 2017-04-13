@@ -1,6 +1,4 @@
 package main
-
-
 /*
                  P14        P15
                   |          |
@@ -32,13 +30,13 @@ func init() {
 func getKeys(sel uint8) uint8{
 	switch sel & 0x30{
 	case 0x30:		//none selected
-		return (sel & 0xF0) | 0x0F
+		return (0xC0|(sel & 0xF0)) | 0x0F
 	case 0x10:		//P15 selected (a,b,select,start)
-		return (sel & 0xF0) | (keys & 0x0F)
+		return (0xC0|(sel & 0xF0)) | (keys & 0x0F)
  	case 0x20:		//P14 selected (direction keys)
-		return (sel & 0xF0) | ((keys & 0xF0)>>4)
+		return (0xC0|(sel & 0xF0)) | ((keys & 0xF0)>>4)
 	default:
-		return (sel & 0xF0) | 0x0F
+		return (0xC0|(sel & 0xF0)) | 0x0F
 	}
 }
 func KeyPressed(k key) {

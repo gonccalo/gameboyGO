@@ -4,7 +4,14 @@ import "os"
 var ram [0x10000]uint8
 
 func writeByte(addr uint16, b uint8) bool{
-	if addr <= 0x8000{
+	if addr >= 0x2000 && addr <= 0x3FFF{
+		changeLRomBank(b)
+	} else if addr >= 0x4000 && addr <= 0x5FFF{
+		changeHRomOrRamBank(b)
+	} else if addr >= 0x6000 && addr <= 0x7FFF{
+		changeRomRamMode(b)
+	}
+	if addr < 0x8000{
 		return true
 	}
 	if addr >= 0xE000 && addr < 0xFE00 {	//echo zone

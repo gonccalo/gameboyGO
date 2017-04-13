@@ -385,7 +385,7 @@ func rst_38(b uint8) int{
 	write16bits(regs.sp, regs.pc)
 	regs.pc = 0x0038
 	return 16
-}
+}	
 func cp_xx(b uint8) int{
 	var val uint8 = readByte(regs.pc)
 	regs.pc++
@@ -493,7 +493,7 @@ func ldh_a_xx(b uint8) int{
 	var val uint8 = readByte(regs.pc)
 	regs.pc++
 	//fmt.Printf("LDH a, %X: %X\n", val, b)
-	regs.a = readByte(0xFF00 + uint16(0x00FF&val))
+	regs.a = readByte(0xFF00 + uint16(0x00FF & val))
 	return 12
 }
 func rst_28(b uint8) int{
