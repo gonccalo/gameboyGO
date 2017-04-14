@@ -52,25 +52,25 @@ func main() {
 	if *fdebug {
 		for {
 			t := time.Now()
-			for CicleCounter = 0; (CicleCounter < CPU_FREQ); {
+			for CicleCounter = 0; (CicleCounter < (CPU_FREQ/60)); {
 				handleInput()
 				ExecuteDebug()
 				UpdateGPU(renderer, texture, cicles_op)
 			} 
-			fmt.Println(time.Second - time.Since(t))
-			time.Sleep(time.Second - time.Since(t))
+			fmt.Println((time.Second/60) - time.Since(t))
+			time.Sleep((time.Second/60) - time.Since(t))
 		}
 	} else{
 		for {
 			CicleCounter = 0
 			t := time.Now()
-			for ;(CicleCounter <= CPU_FREQ); {
+			for ;(CicleCounter <= (CPU_FREQ/60)); {
 				handleInput()
 				Execute()
 				UpdateGPU(renderer, texture, cicles_op)
 			} 
-			fmt.Println(time.Second - time.Since(t))
-			time.Sleep(time.Second - time.Since(t))
+			//fmt.Println((time.Second/60) - time.Since(t))
+			time.Sleep((time.Second/60) - time.Since(t))
 		}
 	}
 }

@@ -266,11 +266,12 @@ func DrawLine(renderer *sdl.Renderer) {
 					//X flip (0=Normal, 1=Horizontally mirrored)
 					bit = (^Xpixel) & 0x07
 				}
-				color := getPixelColor(data0, data1, bit, palette)
-				if color == WHITE{
-					//the white color in sprites is transparent
+				colorCode := getSpritePixelColor(data0, data1, bit)
+				if colorCode == 0{
+					//the color 0 in sprites is transparent
 					continue
 				}
+				color := getColor(colorCode, palette)
 				if (int(spriteX) + int((^Xpixel)&0x07)) >= 160 {
 					continue
 				}
@@ -282,6 +283,14 @@ func DrawLine(renderer *sdl.Renderer) {
 			}
 		}
 	}
+}
+
+func getSpritePixelColor(lower, upper, bitNum uint8) uint8{
+	var mask uint8 = (1 << bitNum)
+	if bitNum < 2 {
+		return ((upper & mask) << (1-bitNum)) | ((lower & mask) >> bitNum)
+	}
+	return (upper & mask) >> (bitNum - 1) | ((lower & mask) >> bitNum)
 }
 
 func getPixelColor(lower, upper, bitNum uint8, palette uint8) uint8{

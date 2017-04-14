@@ -94,10 +94,14 @@ func Load_rom(filename string) {
 
 func changeLRomBank(num uint8) {
 	if Head.cart_type == ROM_MBC1 || Head.cart_type == ROM_MBC1_RAM_BATT || Head.cart_type == ROM_MBC1_RAM{
+		actualRom := romBank 
 		romBank = romBank & 0xE0
 		romBank = romBank | (num & 0x1F)
 		if romBank == 0 {
 			romBank = 1
+		}
+		if actualRom == romBank {
+			return
 		}
 		if num := copy(ram[0x4000:0x8000], RomData[0x4000 * uint32(romBank):0x4000 * (uint32(romBank) + 1)]); num != 0x4000{
 			fmt.Printf("ERRO no bank, copiados %d\n", num)
@@ -108,10 +112,14 @@ func changeLRomBank(num uint8) {
 func changeHRomOrRamBank(num uint8) {
 	if Head.cart_type == ROM_MBC1 || Head.cart_type == ROM_MBC1_RAM_BATT || Head.cart_type == ROM_MBC1_RAM{
 		if bankMode == 0{
+			actualRom := romBank
 			romBank = romBank & 0x1F
 			romBank = romBank | ((num&0x03)<<5)
 			if romBank == 0 {
 				romBank = 1
+			}
+			if actualRom == romBank {
+				return
 			}
 			if num := copy(ram[0x4000:0x8000], RomData[0x4000 * uint32(romBank):0x4000 * (uint32(romBank) + 1)]); num != 0x4000{
 				fmt.Printf("ERRO no bank, copiados %d\n", num)
