@@ -1,5 +1,5 @@
 package main
-import "os"
+//import "os"
 //import "fmt"
 var ram [0x10000]uint8
 
@@ -38,6 +38,7 @@ func writeByte(addr uint16, b uint8) bool{
 		return true
 	} else if addr == 0xFF01{
 		//serial?
+		/*
 		f, err := os.OpenFile("testing.txt", os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
     		panic(err)
@@ -46,6 +47,7 @@ func writeByte(addr uint16, b uint8) bool{
     		panic(err)
 		}
 		f.Close()
+		*/
 	}
 	ram[addr] = b
 	return true
