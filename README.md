@@ -1,6 +1,4 @@
-[![Build Status](https://travis-ci.org/gonccalo/gameboyGO.svg?branch=master)](https://travis-ci.org/gonccalo/gameboyGO)
-
-# gameboyGO
+# gameboyGO [![Build Status](https://travis-ci.org/gonccalo/gameboyGO.svg?branch=master)](https://travis-ci.org/gonccalo/gameboyGO)
 Gameboy emulator in go
 
 ## Current state:
@@ -23,7 +21,7 @@ Gameboy emulator in go
 ![out](https://cloud.githubusercontent.com/assets/5223817/23906938/74379006-08c7-11e7-9f99-e7e6121e1a64.gif)
 
 ## TODO:
-* Fix framerate
+* MBC1 ram banks
 * STOP and HALT instructions
 * Support MBC2, MBC3 & MBC5
 * Sound
