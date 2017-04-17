@@ -1,6 +1,6 @@
 package main
 
-import "fmt"
+//import "fmt"
 
 type interrupt uint8
 const(
@@ -47,7 +47,7 @@ func InterruptExec() {
 		write16bits(regs.sp, regs.pc)
 		regs.pc = 0x58
 	} else if (toExec & uint8(JOYPAD)) != 0 {
-		fmt.Println("JOYPAD")
+		//fmt.Println("JOYPAD")
 		ime = false
 		clearInterruptsFlag(JOYPAD)
 		regs.sp -= 2

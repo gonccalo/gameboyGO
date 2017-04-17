@@ -24,6 +24,7 @@ func main() {
     //flags
 	romFile := go_flag.String("rom", "Bc.gb", "Path to rom file")
 	fdebug  := go_flag.Bool("debug", false, "Set to true to enable debugging")
+	//savedRam := go_flag.String("save", "", "Saved game")
 	go_flag.Parse()
 
 	//init sdl stuff
@@ -43,8 +44,11 @@ func main() {
     if err != nil {
     	panic(err)
     }
-    
-    Load_rom(*romFile)
+    //Load rom
+    if !Load_rom(*romFile){
+    	fmt.Println("ERROR loading rom")
+    	return
+    }
     fmt.Printf("rom: %+v\n", Head)
     Reset()
     renderer.SetDrawColor(0,0,0,255)
@@ -102,6 +106,7 @@ func handleInput(){
 		case sdl.K_ESCAPE:
 			//printStats()
 			//fmt.Printf("%v", ram)
+			saveCartRam()
 			sdl.Quit()
 			os.Exit(0)
 			/*
