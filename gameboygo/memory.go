@@ -3,18 +3,10 @@ package main
 //import "fmt"
 //import "io/ioutil"
 var ram [0x10000]uint8
-var cartRamEnabled bool
+
 func writeByte(addr uint16, b uint8) bool{
-	if addr >= 0x2000 && addr <= 0x3FFF{
-		changeLRomBank(b)
-	} else if addr >= 0x4000 && addr <= 0x5FFF{
-		changeHRomOrRamBank(b)
-	} else if addr >= 0x6000 && addr <= 0x7FFF{
-		changeRomRamMode(b)
-	} else if addr >= 0x0000 && addr <= 0x1FFF{
-		ramEnable(b)
-	}
 	if addr < 0x8000{
+		handleRomWrites(addr, b)
 		return true
 	}
 	if addr >= 0xE000 && addr < 0xFE00 {	//echo zone
@@ -22,8 +14,9 @@ func writeByte(addr uint16, b uint8) bool{
 		ram[0xC000+(addr-0xE000)] = b
 		return true
 	} else if addr == 0xFF07{
-		ram[0xFF07] = b
+		ram[addr] = b
 		setupTimers()
+		return true
 	} else if (addr == 0xFF04) || (addr == 0xFF44){				//Divider register || LCDC y coordinate
 		ram[addr] = 0x00
 		return true
@@ -43,9 +36,7 @@ func writeByte(addr uint16, b uint8) bool{
 		//serial?
 	} else if addr >= 0xA000 && addr <= 0xBFFF{
 		// Cart ram
-		if cartRamEnabled {
-			ram[addr] = b
-		}
+		handleCartRamWrites(addr, b)
 		return true
 	}
 	ram[addr] = b
@@ -68,14 +59,4 @@ func read16bits(addr uint16) uint16{
 func write16bits(addr uint16, data uint16) {
 	writeByte(addr, uint8(data & 0x00FF))
 	writeByte(addr+1,uint8((data & 0xFF00) >> 8))
-}
-
-func ramEnable(b uint8) {
-	if b & 0x0F == 0x0A{
-		//enable
-		cartRamEnabled = true
-	} else{
-		//disable
-		cartRamEnabled = false
-	}
 }

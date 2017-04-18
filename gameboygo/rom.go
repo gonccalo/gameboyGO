@@ -50,6 +50,7 @@ var cartRam []uint8
 var bankMode uint8
 var romBank uint8
 var ramBank uint8
+var cartRamEnabled bool
 
 func (h *rom_header) init(data []byte, f string){
 	h.title = string(data[0x0134:0x143])
@@ -71,6 +72,7 @@ func Load_rom(filename string) bool{
 	case 0x00:
 		if Head.cart_type == ROM_MBC2 || Head.cart_type == ROM_MBC2_BATT{
 			//512*4bit
+			cartRam = make([]uint8, 0x1FFF)
 		} else{
 			//no ram
 		}
@@ -101,32 +103,44 @@ func Load_rom(filename string) bool{
 	}
 	return true
 }
-
-func changeLRomBank(num uint8) {
-	if Head.cart_type == ROM_MBC1 || Head.cart_type == ROM_MBC1_RAM_BATT || Head.cart_type == ROM_MBC1_RAM{
-		var newRomBank uint8
-		newRomBank = romBank & 0xE0
-		newRomBank = newRomBank | (num & 0x1F)
-		changeRomBank(newRomBank)
-	}
-}
-func changeHRomOrRamBank(num uint8) {
-	if Head.cart_type == ROM_MBC1 || Head.cart_type == ROM_MBC1_RAM_BATT || Head.cart_type == ROM_MBC1_RAM{
-		if bankMode == 0{
-			var newRomBank uint8
-			newRomBank = romBank & 0x1F
-			newRomBank = newRomBank | ((num&0x03)<<5)
-			changeRomBank(newRomBank)
-		} else if bankMode == 1 {
-			newRamBank := num & 0x03
-			changeRamBank(newRamBank)
+func handleCartRamWrites(addr uint16, b uint8) {
+	// Cart ram
+	if cartRamEnabled {
+		if Head.cart_type == ROM_MBC2 || Head.cart_type == ROM_MBC2_BATT {
+			if addr > 0xA1FF {
+				return
+			}
+			ram[addr] = b & 0x0F
+		} else{
+			ram[addr] = b
 		}
 	}
 }
-func changeRomBank(newRomBank uint8) {
+func handleRomWrites(addr uint16, b uint8) {
+	if Head.cart_type == ROM_MBC1 || Head.cart_type == ROM_MBC1_RAM_BATT || Head.cart_type == ROM_MBC1_RAM{
+		if addr >= 0x2000 && addr <= 0x3FFF{
+			changeLRomBank(b)
+		} else if addr >= 0x4000 && addr <= 0x5FFF{
+			changeHRomOrRamBank(b)
+		} else if addr >= 0x6000 && addr <= 0x7FFF{
+			changeRomRamMode(b)
+		} else if addr >= 0x0000 && addr <= 0x1FFF{
+			ramEnable(b)
+		}
+	} else if Head.cart_type == ROM_MBC2 || Head.cart_type == ROM_MBC2_BATT {
+		if (addr >= 0x0000 && addr <= 0x1FFF) && (addr&0x0100) == 0x0000{
+			ramEnable(b)
+		} else if (addr >= 0x2000 && addr <= 0x3FFF) && (addr&0x0100) == 0x0100{
+			changeRomBank(b & 0x0F)
+		}
+	}
+}
+
+func changeLRomBank(num uint8) {
+	var newRomBank uint8
+	newRomBank = romBank & 0xE0
+	newRomBank = newRomBank | (num & 0x1F)
 	switch newRomBank{
-	case 0x00:
-		newRomBank = 0x01
 	case 0x20:
 		newRomBank = 0x21
 	case 0x40:
@@ -134,23 +148,49 @@ func changeRomBank(newRomBank uint8) {
 	case 0x60:
 		newRomBank = 0x61
 	}
+	changeRomBank(newRomBank)
+}
+
+func changeHRomOrRamBank(num uint8) {
+	if bankMode == 0{
+		var newRomBank uint8
+		newRomBank = romBank & 0x1F
+		newRomBank = newRomBank | ((num&0x03)<<5)
+		switch newRomBank{
+		case 0x20:
+			newRomBank = 0x21
+		case 0x40:
+			newRomBank = 0x41
+		case 0x60:
+			newRomBank = 0x61
+		}
+		changeRomBank(newRomBank)
+	} else if bankMode == 1 {
+		newRamBank := num & 0x03
+		changeRamBank(newRamBank)
+	}
+}
+func changeRomBank(newRomBank uint8) {
+	if newRomBank == 0x00 {
+		newRomBank = 0x01
+	}
 	if newRomBank == romBank {
 		return
 	}
 	romBank = newRomBank
 	if num := copy(ram[0x4000:0x8000], RomData[0x4000 * uint32(romBank):0x4000 * (uint32(romBank) + 1)]); num != 0x4000{
-		fmt.Printf("ERRO no bank, copiados %d\n", num)
+		fmt.Printf("ERROR in rom bank %d, copied %d\n",romBank, num)
 		return
 	}
 }
 func changeRamBank(nRamBank uint8) {
 	if num := copy(cartRam[0x1FFF * uint32(ramBank):0x1FFF * (uint32(ramBank) + 1)], ram[0xA000:0xBFFF]); num != 0x1FFF{
-		fmt.Printf("ERRO no bank, copiados %d\n", num)
+		fmt.Printf("ERROR in ram bank %d, copied %d\n",ramBank, num)
 		return
 	}
 	ramBank = nRamBank
 	if num := copy(ram[0xA000:0xBFFF], cartRam[0x1FFF * uint32(ramBank):0x1FFF * (uint32(ramBank) + 1)]); num != 0x1FFF{
-		fmt.Printf("ERRO no bank, copiados %d\n", num)
+		fmt.Printf("ERROR in ram bank %d, copied %d\n",ramBank, num)
 		return
 	}
 }
@@ -163,28 +203,44 @@ func changeRomRamMode(b uint8) {
 		changeRomBank(romBank & 0x1F)
 	}
 }
-
+func ramEnable(b uint8) {
+	if b & 0x0F == 0x0A{
+		//enable
+		cartRamEnabled = true
+	} else{
+		//disable
+		cartRamEnabled = false
+	}
+}
 func saveCartRam() {
-	if Head.cart_type == ROM_MBC1_RAM_BATT{
+	if Head.cart_type == ROM_MBC1_RAM_BATT || Head.cart_type == ROM_MBC2_BATT{
+		if num := copy(cartRam[0x1FFF * uint32(ramBank):0x1FFF * (uint32(ramBank) + 1)], ram[0xA000:0xBFFF]); num != 0x1FFF{
+			fmt.Printf("ERROR in ram bank %d, copied %d\n", ramBank, num)
+			return
+		}
 		if err := ioutil.WriteFile(Head.rom_file + "_save", cartRam, 0666); err != nil{
 			panic(err)
 		}
 	}
 }
 func Load_ram(filename string) {
-	if Head.cart_type == ROM_MBC1_RAM_BATT{
+	if Head.cart_type == ROM_MBC1_RAM_BATT || Head.cart_type == ROM_MBC2_BATT{
 		loadCartRam(filename)
 	}
 }
 func loadCartRam(filename string) {
 	newCartRam, err := ioutil.ReadFile(filename)
 	if err != nil {
-		fmt.Printf("Erro a ler cart Ram")
+		fmt.Printf("ERROR reading cart Ram")
 		return
 	}
 	if len(newCartRam) != len(cartRam) {
-		fmt.Printf("Erro a ler cart Ram")
+		fmt.Printf("ERROR reading cart Ram")
 		return
 	}
 	cartRam = newCartRam
+	if num := copy(ram[0xA000:0xBFFF], cartRam[0x1FFF * uint32(ramBank):0x1FFF * (uint32(ramBank) + 1)]); num != 0x1FFF{
+		fmt.Printf("ERRO in ram bank %d, copiados %d\n", ramBank, num)
+		return
+	}
 }
