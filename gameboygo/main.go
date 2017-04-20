@@ -49,7 +49,7 @@ func main() {
     	fmt.Println("ERROR loading rom")
     	return
     }
-    fmt.Printf("rom: %+v\n", Head)
+    //fmt.Printf("rom: %+v\n", cart.Head)
     Reset()
     renderer.SetDrawColor(0,0,0,255)
 	renderer.Clear()

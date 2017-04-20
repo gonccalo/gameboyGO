@@ -6,7 +6,8 @@ var ram [0x10000]uint8
 
 func writeByte(addr uint16, b uint8) bool{
 	if addr < 0x8000{
-		handleRomWrites(addr, b)
+		//handleRomWrites(addr, b)
+		cart.romWrite(addr, b)
 		return true
 	}
 	if addr >= 0xE000 && addr < 0xFE00 {	//echo zone
@@ -36,25 +37,27 @@ func writeByte(addr uint16, b uint8) bool{
 		//serial?
 	} else if addr >= 0xA000 && addr <= 0xBFFF{
 		// Cart ram
-		handleCartRamWrites(addr, b)
+		//handleCartRamWrites(addr, b)
+		cart.ramWrite(addr, b)
 		return true
 	}
 	ram[addr] = b
 	return true
 }
 func readByte(addr uint16) uint8{
+	if addr < 0x8000{
+		return cart.romRead(addr)
+	}
 	if addr == 0xFF00{
 		return getKeys(ram[addr])
-	} else if addr >= 0xA000 && addr <= 0xBFFF{
-		// Cart ram
-		if !cartRamEnabled {
-			return 0xFF
-		}
+	}
+	if addr >= 0xA000 && addr <= 0xBFFF{
+		return cart.ramRead(addr)
 	}
 	return ram[addr]
 }
 func read16bits(addr uint16) uint16{
-	return uint16(uint16(ram[addr]) | (uint16(ram[addr+1]) << 8))
+	return uint16(uint16(readByte(addr)) | (uint16(readByte(addr+1)) << 8))
 }
 func write16bits(addr uint16, data uint16) {
 	writeByte(addr, uint8(data & 0x00FF))
