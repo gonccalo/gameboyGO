@@ -6,7 +6,7 @@ Gameboy emulator in go
 * Joypad
 * Video
 * Timers
-* Support MBC1 & MBC2 roms
+* Support MBC1, MBC2 & MBC3 roms
 * Load saved games
 * Cpu test roms passed
 ### Tested Games
@@ -19,6 +19,8 @@ Gameboy emulator in go
 * The Legend of Zelda - Link's Awakening
 * The Final Fantasy Legend
 * Seiken Densetsu
+* Pokemon - Red Version
+* Pokemon - Gold Version
 
 ![out3](https://cloud.githubusercontent.com/assets/5223817/25020097/09d047b4-2085-11e7-87af-c88fafc6a51a.gif)
 ![out2](https://cloud.githubusercontent.com/assets/5223817/24856667/7309c2f0-1ddd-11e7-82f3-ff527d51b0d8.gif)
@@ -26,7 +28,7 @@ Gameboy emulator in go
 
 ## TODO:
 * STOP and HALT instructions
-* Support MBC3 & MBC5
+* Support MBC5
 * Sound
 
 ## Compile and run

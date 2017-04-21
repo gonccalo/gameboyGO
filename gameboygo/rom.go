@@ -12,7 +12,6 @@ type rom_header struct{
 	ram_size 		uint8
 	header_checksum	uint8
 	version			uint8
-	rom_file		string
 }
 
 type Cart interface{
@@ -71,13 +70,12 @@ func Load_rom(filename string) bool{
 	}
 	switch RomData[0x147]{
 	case ROM_MBC1, ROM_MBC1_RAM, ROM_MBC1_RAM_BATT:
-		fmt.Printf("MBC1\n")
 		cart = new(MBC1)
 	case ROM_MBC2, ROM_MBC2_BATT:
-		fmt.Printf("MBC2\n")
 		cart = new(MBC2)
+	case ROM_MBC3_TIMER_BATT, ROM_MBC3_TIMER_RAM_BATT, ROM_MBC3, ROM_MBC3_RAM, ROM_MBC3_RAM_BATT:
+		cart = new(MBC3)
 	default:
-		fmt.Printf("Gen\n")
 		cart = new(genericCart)
 	}
 	if !cart.init(RomData, filename){

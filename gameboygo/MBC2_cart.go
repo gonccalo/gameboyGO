@@ -1,6 +1,7 @@
 package main
 
 import (
+	"os"
 	"io/ioutil"
 	"fmt"
 )
@@ -68,6 +69,9 @@ func (r *MBC2)ramWrite(addr uint16, b uint8) {
 func (r *MBC2)loadRam() {
 	newCartRam, err := ioutil.ReadFile(r.rom_file + "_save")
 	if err != nil {
+		if os.IsNotExist(err){
+			return	
+		}
 		fmt.Printf("ERROR reading cart Ram")
 		return
 	}
